@@ -334,7 +334,7 @@ class TicketGeneratorApp:
         back_btn.pack(side="left")
         
         # Generate All button
-        generate_all_btn = tk.Button(
+        self.generate_all_btn = tk.Button(
             bottom_frame,
             text="🎫 Generiši SVE ulaznice",
             font=("Segoe UI", 11, "bold"),
@@ -346,10 +346,10 @@ class TicketGeneratorApp:
             cursor="hand2",
             command=self.generate_all_tickets
         )
-        generate_all_btn.pack(side="right")
+        self.generate_all_btn.pack(side="right")
         
         # Generate selected button
-        generate_btn = tk.Button(
+        self.generate_selected_btn = tk.Button(
             bottom_frame,
             text="🎫 Generiši za izabranu zonu",
             font=("Segoe UI", 11),
@@ -361,7 +361,7 @@ class TicketGeneratorApp:
             cursor="hand2",
             command=self.generate_selected_zone_tickets
         )
-        generate_btn.pack(side="right", padx=10)
+        self.generate_selected_btn.pack(side="right", padx=10)
         
         # Status label
         self.step2_status = tk.Label(
@@ -774,10 +774,20 @@ class TicketGeneratorApp:
         index = selection[0]
         zone_name = list(self.zones_data.keys())[index]
         
+        # Disable buttons
+        self.disable_generate_buttons()
+        
         # Run in background thread
-        thread = threading.Thread(target=self.generate_zone_pdf, args=(zone_name,))
+        thread = threading.Thread(target=self.generate_zone_pdf_wrapper, args=(zone_name,))
         thread.daemon = True
         thread.start()
+    
+    def generate_zone_pdf_wrapper(self, zone_name):
+        """Wrapper to enable buttons after generation"""
+        try:
+            self.generate_zone_pdf(zone_name)
+        finally:
+            self.root.after(0, self.enable_generate_buttons)
     
     def generate_all_tickets(self):
         """Generate PDF tickets for all zones"""
@@ -797,6 +807,9 @@ class TicketGeneratorApp:
             messagebox.showwarning("Upozorenje", "Nema zona sa template-om!")
             return
         
+        # Disable buttons
+        self.disable_generate_buttons()
+        
         # Run in background thread
         thread = threading.Thread(target=self.generate_all_zones_background, args=(zones_to_generate,))
         thread.daemon = True
@@ -806,13 +819,16 @@ class TicketGeneratorApp:
         """Generate PDFs for all zones in background"""
         total_zones = len(zones_to_generate)
         
-        for i, zone_name in enumerate(zones_to_generate):
-            self.root.after(0, lambda zn=zone_name, idx=i, total=total_zones: 
-                self.step2_status.config(text=f"Generišem zonu {idx+1}/{total}: {zn}", fg="#2196F3"))
-            self.generate_zone_pdf(zone_name, show_folder=False)
-        
-        self.root.after(0, lambda: messagebox.showinfo("Završeno", f"PDF fajlovi su generisani za {total_zones} zona!"))
-        self.root.after(0, lambda: self.step2_status.config(text=f"✅ Završeno! Generisano {total_zones} PDF fajlova.", fg="#4CAF50"))
+        try:
+            for i, zone_name in enumerate(zones_to_generate):
+                self.root.after(0, lambda zn=zone_name, idx=i, total=total_zones: 
+                    self.step2_status.config(text=f"Generišem zonu {idx+1}/{total}: {zn}", fg="#2196F3"))
+                self.generate_zone_pdf(zone_name, show_folder=False)
+            
+            self.root.after(0, lambda: messagebox.showinfo("Završeno", f"PDF fajlovi su generisani za {total_zones} zona!"))
+            self.root.after(0, lambda: self.step2_status.config(text=f"✅ Završeno! Generisano {total_zones} PDF fajlova.", fg="#4CAF50"))
+        finally:
+            self.root.after(0, self.enable_generate_buttons)
     
     def update_progress(self, current, total, zone_name):
         """Update progress bar from main thread"""
@@ -820,6 +836,16 @@ class TicketGeneratorApp:
         self.pdf_progress["value"] = percent
         self.progress_percent.config(text=f"{percent}% ({current}/{total})")
         self.progress_label.config(text=f"Generišem: {zone_name}")
+    
+    def disable_generate_buttons(self):
+        """Disable generate buttons during PDF generation"""
+        self.generate_all_btn.config(state="disabled", bg="#9E9E9E", cursor="arrow")
+        self.generate_selected_btn.config(state="disabled", bg="#9E9E9E", cursor="arrow")
+    
+    def enable_generate_buttons(self):
+        """Enable generate buttons after PDF generation"""
+        self.generate_all_btn.config(state="normal", bg="#4CAF50", cursor="hand2")
+        self.generate_selected_btn.config(state="normal", bg="#2196F3", cursor="hand2")
     
     def generate_zone_pdf(self, zone_name, show_folder=True):
         """Generate PDF with 4 tickets per A4 page for a zone"""
