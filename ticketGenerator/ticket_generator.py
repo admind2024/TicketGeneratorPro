@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 from collections import defaultdict
 from io import BytesIO
+import threading
 
 # Try to import tkinterdnd2 for drag and drop support
 try:
@@ -371,6 +372,34 @@ class TicketGeneratorApp:
             bg="#2b2b2b"
         )
         self.step2_status.pack(pady=(10, 0))
+        
+        # Progress frame (hidden initially)
+        self.progress_frame = tk.Frame(self.step2_frame, bg="#2b2b2b")
+        
+        self.progress_label = tk.Label(
+            self.progress_frame,
+            text="",
+            font=("Segoe UI", 10),
+            fg="#2196F3",
+            bg="#2b2b2b"
+        )
+        self.progress_label.pack()
+        
+        self.pdf_progress = ttk.Progressbar(
+            self.progress_frame,
+            mode="determinate",
+            length=400
+        )
+        self.pdf_progress.pack(pady=5)
+        
+        self.progress_percent = tk.Label(
+            self.progress_frame,
+            text="0%",
+            font=("Segoe UI", 12, "bold"),
+            fg="#4CAF50",
+            bg="#2b2b2b"
+        )
+        self.progress_percent.pack()
     
     def create_slider(self, parent, label_text, variable, min_val, max_val):
         """Create a labeled slider"""
@@ -744,7 +773,11 @@ class TicketGeneratorApp:
         
         index = selection[0]
         zone_name = list(self.zones_data.keys())[index]
-        self.generate_zone_pdf(zone_name)
+        
+        # Run in background thread
+        thread = threading.Thread(target=self.generate_zone_pdf, args=(zone_name,))
+        thread.daemon = True
+        thread.start()
     
     def generate_all_tickets(self):
         """Generate PDF tickets for all zones"""
@@ -758,22 +791,46 @@ class TicketGeneratorApp:
             if not result:
                 return
         
-        for zone_name in self.zones_data.keys():
-            if self.zones_data[zone_name].get("template"):
-                self.generate_zone_pdf(zone_name)
+        zones_to_generate = [zn for zn, zi in self.zones_data.items() if zi.get("template")]
         
-        messagebox.showinfo("Završeno", "PDF fajlovi su generisani!")
+        if not zones_to_generate:
+            messagebox.showwarning("Upozorenje", "Nema zona sa template-om!")
+            return
+        
+        # Run in background thread
+        thread = threading.Thread(target=self.generate_all_zones_background, args=(zones_to_generate,))
+        thread.daemon = True
+        thread.start()
     
-    def generate_zone_pdf(self, zone_name):
+    def generate_all_zones_background(self, zones_to_generate):
+        """Generate PDFs for all zones in background"""
+        total_zones = len(zones_to_generate)
+        
+        for i, zone_name in enumerate(zones_to_generate):
+            self.root.after(0, lambda zn=zone_name, idx=i, total=total_zones: 
+                self.step2_status.config(text=f"Generišem zonu {idx+1}/{total}: {zn}", fg="#2196F3"))
+            self.generate_zone_pdf(zone_name, show_folder=False)
+        
+        self.root.after(0, lambda: messagebox.showinfo("Završeno", f"PDF fajlovi su generisani za {total_zones} zona!"))
+        self.root.after(0, lambda: self.step2_status.config(text=f"✅ Završeno! Generisano {total_zones} PDF fajlova.", fg="#4CAF50"))
+    
+    def update_progress(self, current, total, zone_name):
+        """Update progress bar from main thread"""
+        percent = int((current / total) * 100)
+        self.pdf_progress["value"] = percent
+        self.progress_percent.config(text=f"{percent}% ({current}/{total})")
+        self.progress_label.config(text=f"Generišem: {zone_name}")
+    
+    def generate_zone_pdf(self, zone_name, show_folder=True):
         """Generate PDF with 4 tickets per A4 page for a zone"""
         zone_info = self.zones_data[zone_name]
         
         if not zone_info.get("template"):
-            self.step2_status.config(text=f"⚠️ {zone_name}: Nema template!", fg="#FF9800")
+            self.root.after(0, lambda: self.step2_status.config(text=f"⚠️ {zone_name}: Nema template!", fg="#FF9800"))
             return
         
         if not HAS_REPORTLAB or not HAS_PIL:
-            messagebox.showerror("Greška", "Potrebne biblioteke nisu instalirane!")
+            self.root.after(0, lambda: messagebox.showerror("Greška", "Potrebne biblioteke nisu instalirane!"))
             return
         
         # Read tickets from CSV
@@ -784,8 +841,12 @@ class TicketGeneratorApp:
                 tickets.append(row)
         
         if not tickets:
-            self.step2_status.config(text=f"⚠️ {zone_name}: Nema karata!", fg="#FF9800")
+            self.root.after(0, lambda: self.step2_status.config(text=f"⚠️ {zone_name}: Nema karata!", fg="#FF9800"))
             return
+        
+        # Show progress bar
+        self.root.after(0, lambda: self.progress_frame.pack(pady=(10, 0)))
+        self.root.after(0, lambda: self.update_progress(0, len(tickets), zone_name))
         
         # Load template
         template_img = Image.open(zone_info["template"])
@@ -799,6 +860,8 @@ class TicketGeneratorApp:
         margin = 20
         ticket_width = page_width - 2 * margin
         ticket_height = (page_height - 5 * margin) / 4
+        
+        total_tickets = len(tickets)
         
         # Process tickets
         for i, ticket in enumerate(tickets):
@@ -832,15 +895,24 @@ class TicketGeneratorApp:
                 preserveAspectRatio=True,
                 anchor='c'
             )
+            
+            # Update progress every 10 tickets or at the end
+            if (i + 1) % 10 == 0 or i == total_tickets - 1:
+                current = i + 1
+                self.root.after(0, lambda c=current, t=total_tickets, zn=zone_name: self.update_progress(c, t, zn))
         
         c.save()
-        self.step2_status.config(
+        
+        # Hide progress and show success
+        self.root.after(0, lambda: self.progress_frame.pack_forget())
+        self.root.after(0, lambda: self.step2_status.config(
             text=f"✅ PDF generisan: {pdf_path.name} ({len(tickets)} karata)",
             fg="#4CAF50"
-        )
+        ))
         
         # Open the folder
-        os.startfile(zone_info["dir"])
+        if show_folder:
+            self.root.after(0, lambda: os.startfile(zone_info["dir"]))
     
     def show_error(self, message):
         """Show error message"""
