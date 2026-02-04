@@ -17,6 +17,7 @@ from pathlib import Path
 from collections import defaultdict
 from io import BytesIO
 import threading
+from urllib.parse import urlparse, parse_qs, unquote
 
 # Try to import tkinterdnd2 for drag and drop support
 try:
@@ -538,8 +539,11 @@ class TicketGeneratorApp:
                 
                 for row in reader:
                     ticket_id = row.get(ticket_id_col, "").strip()
-                    qr_code = row.get(qr_code_col, "").strip()
+                    qr_code_raw = row.get(qr_code_col, "").strip()
                     category_key = row.get(category_key_col, "").strip()
+                    
+                    # Extract QR data from URL if needed
+                    qr_code = self.extract_qr_data(qr_code_raw)
                     
                     if ticket_id and qr_code and category_key:
                         tickets_by_category[category_key].append({
@@ -595,6 +599,26 @@ class TicketGeneratorApp:
             self.progress.stop()
             self.progress.pack_forget()
             self.show_error(f"Greška pri procesiranju: {str(e)}")
+    
+    def extract_qr_data(self, qr_code_raw):
+        """Extract QR data from URL or return as-is if not a URL"""
+        if not qr_code_raw:
+            return qr_code_raw
+        
+        # Check if it's a URL with data parameter
+        if qr_code_raw.startswith("http"):
+            try:
+                parsed = urlparse(qr_code_raw)
+                query_params = parse_qs(parsed.query)
+                if "data" in query_params:
+                    # Get the data parameter and decode URL encoding
+                    data = query_params["data"][0]
+                    return unquote(data)
+            except:
+                pass
+        
+        # If not a URL or parsing failed, just decode any URL encoding
+        return unquote(qr_code_raw)
     
     def find_template_image(self, zone_dir):
         """Find the first image file in the zone directory"""
