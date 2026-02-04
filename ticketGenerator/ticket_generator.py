@@ -205,13 +205,38 @@ class TicketGeneratorApp:
             tickets_by_category = defaultdict(list)
             total_tickets = 0
             
-            with open(file_path, "r", encoding="utf-8") as csvfile:
+            with open(file_path, "r", encoding="utf-8-sig") as csvfile:
                 reader = csv.DictReader(csvfile)
                 
+                # Get actual field names from CSV
+                fieldnames = reader.fieldnames if reader.fieldnames else []
+                
+                # Find the correct column names (case-insensitive search)
+                def find_column(names, *possible_names):
+                    for name in names:
+                        for possible in possible_names:
+                            if name.lower().strip() == possible.lower():
+                                return name
+                    return None
+                
+                ticket_id_col = find_column(fieldnames, "ticketId", "ticket_id", "ticketid")
+                qr_code_col = find_column(fieldnames, "QR Code", "qr_code", "qrcode", "QRCode")
+                category_key_col = find_column(fieldnames, "categoryKey", "category_key", "categorykey")
+                
+                if not all([ticket_id_col, qr_code_col, category_key_col]):
+                    missing = []
+                    if not ticket_id_col:
+                        missing.append("ticketId")
+                    if not qr_code_col:
+                        missing.append("QR Code")
+                    if not category_key_col:
+                        missing.append("categoryKey")
+                    raise ValueError(f"CSV fajl nema potrebne kolone: {', '.join(missing)}\nPronađene kolone: {fieldnames}")
+                
                 for row in reader:
-                    ticket_id = row.get("ticketId", "")
-                    qr_code = row.get("QR Code", "")
-                    category_key = row.get("categoryKey", "")
+                    ticket_id = row.get(ticket_id_col, "").strip()
+                    qr_code = row.get(qr_code_col, "").strip()
+                    category_key = row.get(category_key_col, "").strip()
                     
                     if ticket_id and qr_code and category_key:
                         tickets_by_category[category_key].append({
