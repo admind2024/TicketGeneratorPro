@@ -77,6 +77,9 @@ class TicketGeneratorApp:
         self.ticket_id_y_percent = tk.DoubleVar(value=75)
         self.ticket_id_font_size = tk.IntVar(value=24)
         
+        # PDF optimization settings
+        self.optimize_pdf = tk.BooleanVar(value=True)
+        
         # Create main container
         self.main_container = tk.Frame(self.root, bg="#2b2b2b")
         self.main_container.pack(expand=True, fill="both")
@@ -299,6 +302,35 @@ class TicketGeneratorApp:
         
         # Font size
         self.create_slider(right_frame, "Font veličina:", self.ticket_id_font_size, 10, 72)
+        
+        # Separator
+        ttk.Separator(right_frame, orient="horizontal").pack(fill="x", pady=10)
+        
+        # Optimize PDF checkbox
+        optimize_frame = tk.Frame(right_frame, bg="#3c3c3c")
+        optimize_frame.pack(fill="x", pady=5)
+        
+        optimize_check = tk.Checkbutton(
+            optimize_frame,
+            text="📦 Optimizuj PDF (manji fajl)",
+            variable=self.optimize_pdf,
+            font=("Segoe UI", 10),
+            fg="#ffffff",
+            bg="#3c3c3c",
+            selectcolor="#2b2b2b",
+            activebackground="#3c3c3c",
+            activeforeground="#ffffff"
+        )
+        optimize_check.pack(anchor="w")
+        
+        optimize_hint = tk.Label(
+            optimize_frame,
+            text="JPEG kompresija, manja rezolucija",
+            font=("Segoe UI", 8),
+            fg="#888888",
+            bg="#3c3c3c"
+        )
+        optimize_hint.pack(anchor="w", padx=20)
         
         # Preview button
         preview_btn = tk.Button(
@@ -901,6 +933,17 @@ class TicketGeneratorApp:
         # Load template
         template_img = Image.open(zone_info["template"])
         
+        # Check if optimization is enabled
+        optimize = self.optimize_pdf.get()
+        
+        # If optimizing, resize template once for better performance
+        if optimize:
+            # Target width for optimized images (pixels) - good balance for A4 print
+            target_width = 800
+            ratio = target_width / template_img.width
+            target_height = int(template_img.height * ratio)
+            template_img = template_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+        
         # Create PDF
         pdf_path = zone_info["dir"] / f"{zone_name}_tickets.pdf"
         c = canvas.Canvas(str(pdf_path), pagesize=A4)
@@ -932,7 +975,23 @@ class TicketGeneratorApp:
             
             # Convert PIL image to reportlab
             img_buffer = BytesIO()
-            ticket_img.save(img_buffer, format='PNG')
+            
+            if optimize:
+                # Convert to RGB (JPEG doesn't support RGBA)
+                if ticket_img.mode == 'RGBA':
+                    # Create white background
+                    rgb_img = Image.new('RGB', ticket_img.size, (255, 255, 255))
+                    rgb_img.paste(ticket_img, mask=ticket_img.split()[3])
+                    ticket_img = rgb_img
+                elif ticket_img.mode != 'RGB':
+                    ticket_img = ticket_img.convert('RGB')
+                
+                # Save as JPEG with compression
+                ticket_img.save(img_buffer, format='JPEG', quality=90, optimize=False)
+            else:
+                # Save as PNG (larger but lossless)
+                ticket_img.save(img_buffer, format='PNG')
+            
             img_buffer.seek(0)
             
             # Draw image on PDF
