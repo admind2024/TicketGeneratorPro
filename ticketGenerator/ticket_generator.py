@@ -769,7 +769,7 @@ class TicketGeneratorApp:
         )
         close_btn.pack(pady=(0, 20))
     
-    def create_ticket_image(self, template_img, ticket_id, qr_data):
+    def create_ticket_image(self, template_img, ticket_id, qr_data, scale_ratio=1.0):
         """Create a ticket image with QR code and ticket ID overlaid"""
         # Make a copy
         img = template_img.copy()
@@ -801,8 +801,12 @@ class TicketGeneratorApp:
         # Add ticket ID text
         draw = ImageDraw.Draw(img)
         
+        # Scale font size proportionally if image is resized
+        scaled_font_size = int(self.ticket_id_font_size.get() * scale_ratio)
+        scaled_font_size = max(10, scaled_font_size)  # Minimum font size
+        
         try:
-            font = ImageFont.truetype("arial.ttf", self.ticket_id_font_size.get())
+            font = ImageFont.truetype("arial.ttf", scaled_font_size)
         except:
             font = ImageFont.load_default()
         
@@ -813,8 +817,11 @@ class TicketGeneratorApp:
         outline_color = "white"
         text_color = "black"
         
-        for dx in [-2, -1, 0, 1, 2]:
-            for dy in [-2, -1, 0, 1, 2]:
+        # Scale outline thickness proportionally
+        outline_range = [-2, -1, 0, 1, 2] if scale_ratio >= 0.5 else [-1, 0, 1]
+        
+        for dx in outline_range:
+            for dy in outline_range:
                 draw.text((text_x + dx, text_y + dy), ticket_id, font=font, fill=outline_color, anchor="mm")
         draw.text((text_x, text_y), ticket_id, font=font, fill=text_color, anchor="mm")
         
@@ -932,17 +939,20 @@ class TicketGeneratorApp:
         
         # Load template
         template_img = Image.open(zone_info["template"])
+        original_width = template_img.width
         
         # Check if optimization is enabled
         optimize = self.optimize_pdf.get()
         
         # If optimizing, resize template once for better performance
         if optimize:
-            # Target width for optimized images (pixels) - good balance for A4 print
-            target_width = 800
+            # Target width for optimized images (pixels) - good quality for A4 print
+            target_width = 1400
             ratio = target_width / template_img.width
             target_height = int(template_img.height * ratio)
             template_img = template_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+        else:
+            ratio = 1.0
         
         # Create PDF
         pdf_path = zone_info["dir"] / f"{zone_name}_tickets.pdf"
@@ -967,7 +977,8 @@ class TicketGeneratorApp:
             ticket_img = self.create_ticket_image(
                 template_img,
                 ticket["ticketId"],
-                ticket["qr_code"]
+                ticket["qr_code"],
+                scale_ratio=ratio if optimize else 1.0
             )
             
             # Calculate position on page
@@ -987,7 +998,7 @@ class TicketGeneratorApp:
                     ticket_img = ticket_img.convert('RGB')
                 
                 # Save as JPEG with compression
-                ticket_img.save(img_buffer, format='JPEG', quality=90, optimize=False)
+                ticket_img.save(img_buffer, format='JPEG', quality=85, optimize=True)
             else:
                 # Save as PNG (larger but lossless)
                 ticket_img.save(img_buffer, format='PNG')
