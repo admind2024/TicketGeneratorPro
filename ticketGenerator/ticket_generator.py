@@ -318,7 +318,7 @@ class TicketGeneratorApp:
         )
         settings_label.pack(pady=(0, 15))
         
-        # Two columns for settings
+        # Three columns for settings
         settings_columns = tk.Frame(right_frame, bg="#3c3c3c")
         settings_columns.pack(fill="both", expand=True)
         
@@ -339,23 +339,26 @@ class TicketGeneratorApp:
         self.create_slider(left_settings, "Y pozicija (%):", self.qr_y_percent, 0, 100)
         self.create_slider(left_settings, "Veličina (%):", self.qr_size_percent, 5, 50)
         
-        # Ordinal section in left column
+        # Middle settings column - Ordinal
+        middle_settings = tk.Frame(settings_columns, bg="#3c3c3c")
+        middle_settings.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        
         ordinal_label = tk.Label(
-            left_settings,
+            middle_settings,
             text="🔢 Ordinal",
             font=("Segoe UI", 10, "bold"),
             fg="#FF9800",
             bg="#3c3c3c"
         )
-        ordinal_label.pack(anchor="w", pady=(15, 5))
+        ordinal_label.pack(anchor="w", pady=(0, 5))
         
-        self.create_slider(left_settings, "X pozicija (%):", self.ordinal_x_percent, 0, 100)
-        self.create_slider(left_settings, "Y pozicija (%):", self.ordinal_y_percent, 0, 100)
-        self.create_slider(left_settings, "Font:", self.ordinal_font_size, 10, 72)
+        self.create_slider(middle_settings, "X pozicija (%):", self.ordinal_x_percent, 0, 100)
+        self.create_slider(middle_settings, "Y pozicija (%):", self.ordinal_y_percent, 0, 100)
+        self.create_slider(middle_settings, "Font:", self.ordinal_font_size, 10, 72)
         
         # Right settings column - Ticket ID
         right_settings = tk.Frame(settings_columns, bg="#3c3c3c")
-        right_settings.pack(side="right", fill="both", expand=True)
+        right_settings.pack(side="left", fill="both", expand=True)
         
         ticket_id_label = tk.Label(
             right_settings,
