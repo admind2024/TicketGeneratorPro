@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import csv
 import os
+import json
 from pathlib import Path
 from collections import defaultdict
 from io import BytesIO
@@ -312,32 +313,57 @@ class TicketGeneratorApp:
         )
         settings_label.pack(pady=(0, 15))
         
-        # QR Code X position
-        self.create_slider(right_frame, "QR X pozicija (%):", self.qr_x_percent, 0, 100)
+        # Two columns for settings
+        settings_columns = tk.Frame(right_frame, bg="#3c3c3c")
+        settings_columns.pack(fill="both", expand=True)
         
-        # QR Code Y position
-        self.create_slider(right_frame, "QR Y pozicija (%):", self.qr_y_percent, 0, 100)
+        # Left settings column - QR Code
+        left_settings = tk.Frame(settings_columns, bg="#3c3c3c")
+        left_settings.pack(side="left", fill="both", expand=True, padx=(0, 10))
         
-        # QR Code size
-        self.create_slider(right_frame, "QR veličina (%):", self.qr_size_percent, 5, 50)
+        qr_label = tk.Label(
+            left_settings,
+            text="📱 QR Kod",
+            font=("Segoe UI", 10, "bold"),
+            fg="#4CAF50",
+            bg="#3c3c3c"
+        )
+        qr_label.pack(anchor="w", pady=(0, 5))
         
-        # Ordinal X position
-        self.create_slider(right_frame, "Ordinal X (%):", self.ordinal_x_percent, 0, 100)
+        self.create_slider(left_settings, "X pozicija (%):", self.qr_x_percent, 0, 100)
+        self.create_slider(left_settings, "Y pozicija (%):", self.qr_y_percent, 0, 100)
+        self.create_slider(left_settings, "Veličina (%):", self.qr_size_percent, 5, 50)
         
-        # Ordinal Y position
-        self.create_slider(right_frame, "Ordinal Y (%):", self.ordinal_y_percent, 0, 100)
+        # Ordinal section in left column
+        ordinal_label = tk.Label(
+            left_settings,
+            text="🔢 Ordinal",
+            font=("Segoe UI", 10, "bold"),
+            fg="#FF9800",
+            bg="#3c3c3c"
+        )
+        ordinal_label.pack(anchor="w", pady=(15, 5))
         
-        # Ordinal font size
-        self.create_slider(right_frame, "Ordinal font:", self.ordinal_font_size, 10, 72)
+        self.create_slider(left_settings, "X pozicija (%):", self.ordinal_x_percent, 0, 100)
+        self.create_slider(left_settings, "Y pozicija (%):", self.ordinal_y_percent, 0, 100)
+        self.create_slider(left_settings, "Font:", self.ordinal_font_size, 10, 72)
         
-        # Ticket ID X position
-        self.create_slider(right_frame, "Ticket ID X (%):", self.ticket_id_x_percent, 0, 100)
+        # Right settings column - Ticket ID
+        right_settings = tk.Frame(settings_columns, bg="#3c3c3c")
+        right_settings.pack(side="right", fill="both", expand=True)
         
-        # Ticket ID Y position
-        self.create_slider(right_frame, "Ticket ID Y (%):", self.ticket_id_y_percent, 0, 100)
+        ticket_id_label = tk.Label(
+            right_settings,
+            text="🎫 Ticket ID",
+            font=("Segoe UI", 10, "bold"),
+            fg="#2196F3",
+            bg="#3c3c3c"
+        )
+        ticket_id_label.pack(anchor="w", pady=(0, 5))
         
-        # Font size
-        self.create_slider(right_frame, "Font veličina:", self.ticket_id_font_size, 10, 72)
+        self.create_slider(right_settings, "X pozicija (%):", self.ticket_id_x_percent, 0, 100)
+        self.create_slider(right_settings, "Y pozicija (%):", self.ticket_id_y_percent, 0, 100)
+        self.create_slider(right_settings, "Font:", self.ticket_id_font_size, 10, 72)
         
         # Separator
         ttk.Separator(right_frame, orient="horizontal").pack(fill="x", pady=10)
@@ -382,6 +408,38 @@ class TicketGeneratorApp:
             command=self.show_preview
         )
         preview_btn.pack(pady=10)
+        
+        # Save/Load settings buttons
+        settings_btn_frame = tk.Frame(right_frame, bg="#3c3c3c")
+        settings_btn_frame.pack(fill="x", pady=5)
+        
+        save_settings_btn = tk.Button(
+            settings_btn_frame,
+            text="💾 Sačuvaj",
+            font=("Segoe UI", 9),
+            bg="#607D8B",
+            fg="white",
+            relief="flat",
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=self.save_settings
+        )
+        save_settings_btn.pack(side="left", expand=True, fill="x", padx=(0, 5))
+        
+        load_settings_btn = tk.Button(
+            settings_btn_frame,
+            text="📂 Učitaj",
+            font=("Segoe UI", 9),
+            bg="#607D8B",
+            fg="white",
+            relief="flat",
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=self.load_settings
+        )
+        load_settings_btn.pack(side="right", expand=True, fill="x")
         
         # Bottom buttons
         bottom_frame = tk.Frame(self.step2_frame, bg="#2b2b2b")
@@ -825,6 +883,84 @@ class TicketGeneratorApp:
             self.step2_status.config(text=f"✅ Template postavljen: {Path(file_path).name}", fg="#4CAF50")
             # Update live preview
             self.update_live_preview()
+    
+    def save_settings(self):
+        """Save current settings to a JSON file"""
+        settings = {
+            "qr_x_percent": self.qr_x_percent.get(),
+            "qr_y_percent": self.qr_y_percent.get(),
+            "qr_size_percent": self.qr_size_percent.get(),
+            "ordinal_x_percent": self.ordinal_x_percent.get(),
+            "ordinal_y_percent": self.ordinal_y_percent.get(),
+            "ordinal_font_size": self.ordinal_font_size.get(),
+            "ticket_id_x_percent": self.ticket_id_x_percent.get(),
+            "ticket_id_y_percent": self.ticket_id_y_percent.get(),
+            "ticket_id_font_size": self.ticket_id_font_size.get(),
+            "optimize_pdf": self.optimize_pdf.get()
+        }
+        
+        file_path = filedialog.asksaveasfilename(
+            title="Sačuvaj podešavanja",
+            defaultextension=".json",
+            filetypes=[
+                ("JSON fajlovi", "*.json"),
+                ("Svi fajlovi", "*.*")
+            ],
+            initialdir=self.base_dir,
+            initialfile="ticket_settings.json"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(settings, f, indent=2)
+                self.step2_status.config(text=f"✅ Podešavanja sačuvana: {Path(file_path).name}", fg="#4CAF50")
+            except Exception as e:
+                messagebox.showerror("Greška", f"Nije moguće sačuvati podešavanja:\n{e}")
+    
+    def load_settings(self):
+        """Load settings from a JSON file"""
+        file_path = filedialog.askopenfilename(
+            title="Učitaj podešavanja",
+            filetypes=[
+                ("JSON fajlovi", "*.json"),
+                ("Svi fajlovi", "*.*")
+            ],
+            initialdir=self.base_dir
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    settings = json.load(f)
+                
+                # Apply settings
+                if "qr_x_percent" in settings:
+                    self.qr_x_percent.set(settings["qr_x_percent"])
+                if "qr_y_percent" in settings:
+                    self.qr_y_percent.set(settings["qr_y_percent"])
+                if "qr_size_percent" in settings:
+                    self.qr_size_percent.set(settings["qr_size_percent"])
+                if "ordinal_x_percent" in settings:
+                    self.ordinal_x_percent.set(settings["ordinal_x_percent"])
+                if "ordinal_y_percent" in settings:
+                    self.ordinal_y_percent.set(settings["ordinal_y_percent"])
+                if "ordinal_font_size" in settings:
+                    self.ordinal_font_size.set(settings["ordinal_font_size"])
+                if "ticket_id_x_percent" in settings:
+                    self.ticket_id_x_percent.set(settings["ticket_id_x_percent"])
+                if "ticket_id_y_percent" in settings:
+                    self.ticket_id_y_percent.set(settings["ticket_id_y_percent"])
+                if "ticket_id_font_size" in settings:
+                    self.ticket_id_font_size.set(settings["ticket_id_font_size"])
+                if "optimize_pdf" in settings:
+                    self.optimize_pdf.set(settings["optimize_pdf"])
+                
+                self.step2_status.config(text=f"✅ Podešavanja učitana: {Path(file_path).name}", fg="#4CAF50")
+                # Update preview
+                self.update_live_preview()
+            except Exception as e:
+                messagebox.showerror("Greška", f"Nije moguće učitati podešavanja:\n{e}")
     
     def show_preview(self):
         """Show preview of ticket with QR code"""
