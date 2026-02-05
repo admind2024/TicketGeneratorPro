@@ -13,6 +13,7 @@ Ticket Generator je desktop aplikacija za generisanje ulaznica u PDF formatu sa 
 ## Pokretanje aplikacije
 
 ```bash
+C:/Users/Korisnik/Documents/repos/StadionTicketing/.venv/Scripts/Activate.ps1
 python ticket_generator.py
 ```
 

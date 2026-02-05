@@ -73,6 +73,9 @@ class TicketGeneratorApp:
         self.qr_x_percent = tk.DoubleVar(value=75)
         self.qr_y_percent = tk.DoubleVar(value=50)
         self.qr_size_percent = tk.DoubleVar(value=20)
+        self.ordinal_x_percent = tk.DoubleVar(value=75)
+        self.ordinal_y_percent = tk.DoubleVar(value=35)
+        self.ordinal_font_size = tk.IntVar(value=36)
         self.ticket_id_x_percent = tk.DoubleVar(value=75)
         self.ticket_id_y_percent = tk.DoubleVar(value=75)
         self.ticket_id_font_size = tk.IntVar(value=24)
@@ -219,7 +222,7 @@ class TicketGeneratorApp:
         
         # Left column - Zones table
         left_frame = tk.Frame(content_frame, bg="#2b2b2b")
-        left_frame.pack(side="left", expand=True, fill="both", padx=(0, 10))
+        left_frame.pack(side="left", fill="both", padx=(0, 10))
         
         zones_label = tk.Label(
             left_frame,
@@ -232,7 +235,7 @@ class TicketGeneratorApp:
         
         # Zones listbox with scrollbar
         zones_container = tk.Frame(left_frame, bg="#3c3c3c")
-        zones_container.pack(expand=True, fill="both", pady=5)
+        zones_container.pack(fill="both", pady=5)
         
         scrollbar = ttk.Scrollbar(zones_container)
         scrollbar.pack(side="right", fill="y")
@@ -245,7 +248,7 @@ class TicketGeneratorApp:
             selectbackground="#4CAF50",
             selectforeground="#ffffff",
             yscrollcommand=scrollbar.set,
-            height=10
+            height=8
         )
         self.zones_listbox.pack(expand=True, fill="both")
         scrollbar.config(command=self.zones_listbox.yview)
@@ -272,6 +275,30 @@ class TicketGeneratorApp:
         )
         template_btn.pack(pady=10)
         
+        # Center column - Live Preview
+        center_frame = tk.Frame(content_frame, bg="#3c3c3c", padx=10, pady=10)
+        center_frame.pack(side="left", expand=True, fill="both", padx=(0, 10))
+        
+        preview_label = tk.Label(
+            center_frame,
+            text="👁️ Live Preview",
+            font=("Segoe UI", 12, "bold"),
+            fg="#ffffff",
+            bg="#3c3c3c"
+        )
+        preview_label.pack(pady=(0, 10))
+        
+        self.preview_canvas = tk.Label(
+            center_frame,
+            bg="#2b2b2b",
+            width=50,
+            height=20
+        )
+        self.preview_canvas.pack(expand=True, fill="both")
+        
+        # Store reference to current preview image
+        self.current_preview_photo = None
+        
         # Right column - QR Position settings
         right_frame = tk.Frame(content_frame, bg="#3c3c3c", padx=15, pady=15)
         right_frame.pack(side="right", fill="y", padx=(10, 0))
@@ -293,6 +320,15 @@ class TicketGeneratorApp:
         
         # QR Code size
         self.create_slider(right_frame, "QR veličina (%):", self.qr_size_percent, 5, 50)
+        
+        # Ordinal X position
+        self.create_slider(right_frame, "Ordinal X (%):", self.ordinal_x_percent, 0, 100)
+        
+        # Ordinal Y position
+        self.create_slider(right_frame, "Ordinal Y (%):", self.ordinal_y_percent, 0, 100)
+        
+        # Ordinal font size
+        self.create_slider(right_frame, "Ordinal font:", self.ordinal_font_size, 10, 72)
         
         # Ticket ID X position
         self.create_slider(right_frame, "Ticket ID X (%):", self.ticket_id_x_percent, 0, 100)
@@ -433,6 +469,9 @@ class TicketGeneratorApp:
             bg="#2b2b2b"
         )
         self.progress_percent.pack()
+        
+        # Initialize live preview after UI is ready
+        self.root.after(100, self.update_live_preview)
     
     def create_slider(self, parent, label_text, variable, min_val, max_val):
         """Create a labeled slider"""
@@ -456,7 +495,8 @@ class TicketGeneratorApp:
             from_=min_val,
             to=max_val,
             variable=variable,
-            orient="horizontal"
+            orient="horizontal",
+            command=lambda val: self.schedule_preview_update()
         )
         slider.pack(side="left", expand=True, fill="x")
         
@@ -470,6 +510,67 @@ class TicketGeneratorApp:
         )
         value_label.pack(side="right")
     
+    def schedule_preview_update(self):
+        """Schedule a preview update with debounce"""
+        if hasattr(self, '_preview_update_id'):
+            self.root.after_cancel(self._preview_update_id)
+        self._preview_update_id = self.root.after(100, self.update_live_preview)
+    
+    def update_live_preview(self):
+        """Update the live preview canvas"""
+        if not hasattr(self, 'preview_canvas') or not self.preview_canvas.winfo_exists():
+            return
+        
+        if not HAS_PIL:
+            return
+        
+        # Get selected zone
+        if not hasattr(self, 'zones_listbox') or not self.zones_listbox.winfo_exists():
+            return
+        
+        selection = self.zones_listbox.curselection()
+        if not selection:
+            # Try to select first zone with template
+            for i, (zone_name, zone_info) in enumerate(self.zones_data.items()):
+                if zone_info.get("template"):
+                    self.zones_listbox.selection_set(i)
+                    selection = (i,)
+                    break
+        
+        if not selection:
+            return
+        
+        index = selection[0]
+        zone_name = list(self.zones_data.keys())[index]
+        zone_info = self.zones_data[zone_name]
+        
+        if not zone_info.get("template"):
+            return
+        
+        try:
+            # Generate sample ticket image
+            template_img = Image.open(zone_info["template"])
+            sample_ticket = self.create_ticket_image(
+                template_img,
+                "SAMPLE-TICKET-ID",
+                "https://example.com/qr",
+                ordinal=1
+            )
+            
+            # Resize for preview to fit canvas
+            canvas_width = self.preview_canvas.winfo_width()
+            canvas_height = self.preview_canvas.winfo_height()
+            
+            if canvas_width < 50 or canvas_height < 50:
+                canvas_width, canvas_height = 400, 250
+            
+            sample_ticket.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+            
+            self.current_preview_photo = ImageTk.PhotoImage(sample_ticket)
+            self.preview_canvas.config(image=self.current_preview_photo)
+        except Exception as e:
+            pass
+
     def setup_drag_and_drop(self):
         """Setup drag and drop functionality"""
         if hasattr(self, 'drop_frame') and self.drop_frame.winfo_exists():
@@ -596,8 +697,12 @@ class TicketGeneratorApp:
                 
                 csv_file_path = zone_dir / f"{category_key}.csv"
                 
+                # Add ordinal field starting from 1 for each zone
+                for ordinal, ticket in enumerate(tickets, start=1):
+                    ticket["ordinal"] = ordinal
+                
                 with open(csv_file_path, "w", newline="", encoding="utf-8") as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=["ticketId", "qr_code"])
+                    writer = csv.DictWriter(csvfile, fieldnames=["ordinal", "ticketId", "qr_code"])
                     writer.writeheader()
                     writer.writerows(tickets)
                 
@@ -680,6 +785,8 @@ class TicketGeneratorApp:
                     text=f"Template: {template.name}",
                     fg="#4CAF50"
                 )
+                # Update live preview
+                self.update_live_preview()
             else:
                 self.step2_status.config(
                     text="⚠️ Nema template slike za ovu zonu",
@@ -713,7 +820,11 @@ class TicketGeneratorApp:
             for zn, zi in self.zones_data.items():
                 template_status = "✅" if zi.get("template") else "❌"
                 self.zones_listbox.insert(tk.END, f"{template_status} {zn} ({zi['tickets']} karata)")
+            # Re-select the zone
+            self.zones_listbox.selection_set(index)
             self.step2_status.config(text=f"✅ Template postavljen: {Path(file_path).name}", fg="#4CAF50")
+            # Update live preview
+            self.update_live_preview()
     
     def show_preview(self):
         """Show preview of ticket with QR code"""
@@ -744,7 +855,8 @@ class TicketGeneratorApp:
         sample_ticket = self.create_ticket_image(
             template_img,
             "SAMPLE-TICKET-ID",
-            "https://example.com/qr"
+            "https://example.com/qr",
+            ordinal=1
         )
         
         # Resize for preview
@@ -769,8 +881,8 @@ class TicketGeneratorApp:
         )
         close_btn.pack(pady=(0, 20))
     
-    def create_ticket_image(self, template_img, ticket_id, qr_data, scale_ratio=1.0):
-        """Create a ticket image with QR code and ticket ID overlaid"""
+    def create_ticket_image(self, template_img, ticket_id, qr_data, ordinal=None, scale_ratio=1.0):
+        """Create a ticket image with QR code, ordinal and ticket ID overlaid"""
         # Make a copy
         img = template_img.copy()
         img_width, img_height = img.size
@@ -798,8 +910,30 @@ class TicketGeneratorApp:
         qr_img = qr_img.convert("RGBA")
         img.paste(qr_img, (qr_x, qr_y))
         
-        # Add ticket ID text
+        # Add ordinal and ticket ID text
         draw = ImageDraw.Draw(img)
+        
+        # Draw ordinal
+        if ordinal is not None:
+            ordinal_font_size = int(self.ordinal_font_size.get() * scale_ratio)
+            ordinal_font_size = max(12, ordinal_font_size)
+            try:
+                ordinal_font = ImageFont.truetype("arial.ttf", ordinal_font_size)
+            except:
+                ordinal_font = ImageFont.load_default()
+            
+            # Position ordinal based on settings
+            ordinal_x = int(img_width * self.ordinal_x_percent.get() / 100)
+            ordinal_y = int(img_height * self.ordinal_y_percent.get() / 100)
+            
+            ordinal_text = str(ordinal)
+            
+            # Draw ordinal with outline for visibility
+            outline_range = [-2, -1, 0, 1, 2] if scale_ratio >= 0.5 else [-1, 0, 1]
+            for dx in outline_range:
+                for dy in outline_range:
+                    draw.text((ordinal_x + dx, ordinal_y + dy), ordinal_text, font=ordinal_font, fill="white", anchor="mm")
+            draw.text((ordinal_x, ordinal_y), ordinal_text, font=ordinal_font, fill="black", anchor="mm")
         
         # Scale font size proportionally if image is resized
         scaled_font_size = int(self.ticket_id_font_size.get() * scale_ratio)
@@ -978,6 +1112,7 @@ class TicketGeneratorApp:
                 template_img,
                 ticket["ticketId"],
                 ticket["qr_code"],
+                ordinal=ticket.get("ordinal"),
                 scale_ratio=ratio if optimize else 1.0
             )
             
