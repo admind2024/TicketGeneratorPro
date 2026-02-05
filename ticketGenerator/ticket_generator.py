@@ -84,6 +84,11 @@ class TicketGeneratorApp:
         # PDF optimization settings
         self.optimize_pdf = tk.BooleanVar(value=True)
         
+        # Reorder for cutting settings
+        self.reorder_for_cutting = tk.BooleanVar(value=False)
+        self.pages_per_deck = tk.IntVar(value=100)
+        self.tickets_per_page = 4  # Fixed: 4 tickets per A4 page
+        
         # Create main container
         self.main_container = tk.Frame(self.root, bg="#2b2b2b")
         self.main_container.pack(expand=True, fill="both")
@@ -393,6 +398,63 @@ class TicketGeneratorApp:
             bg="#3c3c3c"
         )
         optimize_hint.pack(anchor="w", padx=20)
+        
+        # Reorder for cutting checkbox
+        reorder_frame = tk.Frame(right_frame, bg="#3c3c3c")
+        reorder_frame.pack(fill="x", pady=5)
+        
+        reorder_check = tk.Checkbutton(
+            reorder_frame,
+            text="✂️ Preuredi za siječenje",
+            variable=self.reorder_for_cutting,
+            font=("Segoe UI", 10),
+            fg="#ffffff",
+            bg="#3c3c3c",
+            selectcolor="#2b2b2b",
+            activebackground="#3c3c3c",
+            activeforeground="#ffffff"
+        )
+        reorder_check.pack(anchor="w")
+        
+        reorder_hint = tk.Label(
+            reorder_frame,
+            text="Ordinal-i dolaze jedan ispod drugog",
+            font=("Segoe UI", 8),
+            fg="#888888",
+            bg="#3c3c3c"
+        )
+        reorder_hint.pack(anchor="w", padx=20)
+        
+        # Pages per deck input
+        deck_frame = tk.Frame(reorder_frame, bg="#3c3c3c")
+        deck_frame.pack(fill="x", pady=(5, 0), padx=20)
+        
+        tk.Label(
+            deck_frame,
+            text="Stranica po špilu:",
+            font=("Segoe UI", 9),
+            fg="#cccccc",
+            bg="#3c3c3c"
+        ).pack(side="left")
+        
+        deck_entry = tk.Entry(
+            deck_frame,
+            textvariable=self.pages_per_deck,
+            width=5,
+            font=("Segoe UI", 9),
+            bg="#2b2b2b",
+            fg="#ffffff",
+            insertbackground="#ffffff"
+        )
+        deck_entry.pack(side="left", padx=5)
+        
+        tk.Label(
+            deck_frame,
+            text="(default: 100)",
+            font=("Segoe UI", 8),
+            fg="#888888",
+            bg="#3c3c3c"
+        ).pack(side="left")
         
         # Preview button
         preview_btn = tk.Button(
@@ -896,7 +958,9 @@ class TicketGeneratorApp:
             "ticket_id_x_percent": self.ticket_id_x_percent.get(),
             "ticket_id_y_percent": self.ticket_id_y_percent.get(),
             "ticket_id_font_size": self.ticket_id_font_size.get(),
-            "optimize_pdf": self.optimize_pdf.get()
+            "optimize_pdf": self.optimize_pdf.get(),
+            "reorder_for_cutting": self.reorder_for_cutting.get(),
+            "pages_per_deck": self.pages_per_deck.get()
         }
         
         file_path = filedialog.asksaveasfilename(
@@ -955,6 +1019,10 @@ class TicketGeneratorApp:
                     self.ticket_id_font_size.set(settings["ticket_id_font_size"])
                 if "optimize_pdf" in settings:
                     self.optimize_pdf.set(settings["optimize_pdf"])
+                if "reorder_for_cutting" in settings:
+                    self.reorder_for_cutting.set(settings["reorder_for_cutting"])
+                if "pages_per_deck" in settings:
+                    self.pages_per_deck.set(settings["pages_per_deck"])
                 
                 self.step2_status.config(text=f"✅ Podešavanja učitana: {Path(file_path).name}", fg="#4CAF50")
                 # Update preview
@@ -1180,6 +1248,57 @@ class TicketGeneratorApp:
         self.generate_all_btn.config(state="normal", bg="#4CAF50", cursor="hand2")
         self.generate_selected_btn.config(state="normal", bg="#2196F3", cursor="hand2")
     
+    def reorder_tickets_for_cutting(self, tickets):
+        """
+        Reorders tickets so that when pages are stacked and cut, 
+        ordinals come in sequence in each stack.
+        
+        With 4 tickets per page and 100 pages per deck:
+        - Page 1: tickets 1, 101, 201, 301
+        - Page 2: tickets 2, 102, 202, 302
+        - etc.
+        
+        This way, after cutting a 100-page stack, you get 4 piles
+        of 100 tickets each with consecutive ordinals.
+        """
+        pages_per_deck = self.pages_per_deck.get()
+        tickets_per_page = self.tickets_per_page  # 4
+        chunk_size = pages_per_deck * tickets_per_page  # 400
+        
+        total_tickets = len(tickets)
+        reordered = []
+        
+        # Process in chunks (decks)
+        num_chunks = (total_tickets + chunk_size - 1) // chunk_size
+        
+        for chunk_idx in range(num_chunks):
+            start = chunk_idx * chunk_size
+            end = min(start + chunk_size, total_tickets)
+            chunk = tickets[start:end]
+            
+            # Pad chunk if necessary (with None placeholders)
+            pad_count = chunk_size - len(chunk)
+            if pad_count > 0:
+                chunk = chunk + [None] * pad_count
+            
+            # Reshape into matrix: [tickets_per_page rows] x [pages_per_deck columns]
+            # Row 0: tickets 0, 1, 2, ... (pages_per_deck-1) - first position on each page
+            # Row 1: tickets pages_per_deck, pages_per_deck+1, ... - second position on each page
+            # etc.
+            matrix = []
+            for row in range(tickets_per_page):
+                matrix.append(chunk[row * pages_per_deck : (row + 1) * pages_per_deck])
+            
+            # Now read column by column to get reordered sequence
+            # Column 0 = page 1: matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0]
+            # Column 1 = page 2: matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1]
+            for col in range(pages_per_deck):
+                for row in range(tickets_per_page):
+                    if col < len(matrix[row]) and matrix[row][col] is not None:
+                        reordered.append(matrix[row][col])
+        
+        return reordered
+    
     def generate_zone_pdf(self, zone_name, show_folder=True):
         """Generate PDF with 4 tickets per A4 page for a zone"""
         zone_info = self.zones_data[zone_name]
@@ -1202,6 +1321,10 @@ class TicketGeneratorApp:
         if not tickets:
             self.root.after(0, lambda: self.step2_status.config(text=f"⚠️ {zone_name}: Nema karata!", fg="#FF9800"))
             return
+        
+        # Apply reordering for cutting if enabled
+        if self.reorder_for_cutting.get():
+            tickets = self.reorder_tickets_for_cutting(tickets)
         
         # Show progress bar
         self.root.after(0, lambda: self.progress_frame.pack(pady=(10, 0)))
