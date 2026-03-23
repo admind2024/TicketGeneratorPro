@@ -1,0 +1,14 @@
+{
+  "qr_x_percent": 88.0,
+  "qr_y_percent": 31.0,
+  "qr_size_percent": 14.0,
+  "ordinal_x_percent": 95.0,
+  "ordinal_y_percent": 63.46511627906976,
+  "ordinal_font_size": 36,
+  "ticket_id_x_percent": 85.0,
+  "ticket_id_y_percent": 5.0,
+  "ticket_id_font_size": 24,
+  "optimize_pdf": true,
+  "reorder_for_cutting": true,
+  "pages_per_deck": 100
+}
