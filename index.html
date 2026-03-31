@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Generator Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #2b2b2b; color: #fff; min-height: 100vh; }
@@ -236,8 +236,16 @@ document.getElementById('loadInput').addEventListener('change', async e => {
 });
 
 // Canvas rendering
-function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
-async function qrURL(data,size){return await QRCode.toDataURL(data,{width:size,margin:1,color:{dark:'#000',light:'#fff'}});}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
+function qrURL(data,size){
+    const qr=qrcode(0,'M'); qr.addData(data); qr.make();
+    const mods=qr.getModuleCount();
+    const c=document.createElement('canvas'); c.width=size; c.height=size;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
+    const cellSize=size/mods; ctx.fillStyle='#000';
+    for(let r=0;r<mods;r++) for(let col=0;col<mods;col++) if(qr.isDark(r,col)) ctx.fillRect(col*cellSize,r*cellSize,cellSize,cellSize);
+    return c.toDataURL();
+}
 
 async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
     const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
@@ -248,7 +256,7 @@ async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
     const qs=Math.round(w*s.qr_size/100);
     const qx=Math.max(0,Math.round(w*s.qr_x/100-qs/2));
     const qy=Math.max(0,Math.round(h*s.qr_y/100-qs/2));
-    const qimg=await loadImg(await qrURL(qrData,qs));
+    const qimg=await loadImg(qrURL(qrData,qs));
     ctx.drawImage(qimg,qx,qy,qs,qs);
     function txt(text,x,y,fontSize){
         const fs=Math.max(10,Math.round(fontSize*sc));
