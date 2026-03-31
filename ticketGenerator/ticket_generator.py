@@ -780,8 +780,8 @@ class TicketGeneratorApp:
                     return None
                 
                 ticket_id_col = find_column(fieldnames, "ticketId", "ticket_id", "ticketid")
-                qr_code_col = find_column(fieldnames, "QR Code", "qr_code", "qrcode", "QRCode")
-                category_key_col = find_column(fieldnames, "categoryKey", "category_key", "categorykey")
+                qr_code_col = find_column(fieldnames, "QR Code", "qr_code", "qrcode", "QRCode", "qrCodeRaw", "qrcoderaw")
+                category_key_col = find_column(fieldnames, "categoryKey", "category_key", "categorykey", "category")
                 
                 if not all([ticket_id_col, qr_code_col, category_key_col]):
                     missing = []

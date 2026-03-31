@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #2b2b2b; color: #fff; min-height: 100vh; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        h1 { text-align: center; font-size: 24px; margin-bottom: 20px; }
+        h2 { font-size: 18px; margin-bottom: 10px; }
+        h3 { font-size: 14px; margin-bottom: 8px; color: #4CAF50; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;
+            font-size: 14px; font-family: inherit; color: #fff; transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-green { background: #4CAF50; }
+        .btn-blue { background: #2196F3; }
+        .btn-orange { background: #FF9800; }
+        .btn-gray { background: #757575; }
+        .btn-purple { background: #9C27B0; }
+
+        /* Step 1 */
+        .drop-zone {
+            border: 2px dashed #5c5c5c; border-radius: 8px; padding: 60px 20px;
+            text-align: center; background: #3c3c3c; transition: all 0.3s; cursor: pointer;
+        }
+        .drop-zone.dragover { border-color: #4CAF50; background: #3c4c3c; }
+        .drop-zone p { color: #888; font-size: 16px; margin-top: 10px; }
+        .drop-zone .icon { font-size: 48px; }
+
+        .status { margin-top: 15px; padding: 10px; border-radius: 4px; white-space: pre-line; }
+        .status.success { background: #1b3a1b; color: #4CAF50; }
+        .status.error { background: #3a1b1b; color: #f44336; }
+        .status.info { background: #1b2a3a; color: #2196F3; }
+
+        .buttons-row { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+
+        /* Step 2 */
+        .step2-layout { display: grid; grid-template-columns: 220px 1fr 320px; gap: 15px; }
+
+        .zone-list { background: #3c3c3c; border-radius: 4px; padding: 10px; }
+        .zone-item {
+            padding: 8px 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px;
+            font-size: 13px; transition: background 0.2s;
+        }
+        .zone-item:hover { background: #4c4c4c; }
+        .zone-item.selected { background: #4CAF50; }
+        .zone-item .status-icon { margin-right: 5px; }
+
+        .preview-panel { background: #3c3c3c; border-radius: 4px; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .preview-panel img { max-width: 100%; max-height: 400px; border-radius: 4px; }
+        .preview-placeholder { color: #888; padding: 100px 20px; text-align: center; }
+
+        .settings-panel { background: #3c3c3c; border-radius: 4px; padding: 15px; overflow-y: auto; max-height: 80vh; }
+
+        .settings-group { margin-bottom: 15px; }
+        .settings-group h3 { margin-bottom: 8px; }
+
+        .slider-row { margin-bottom: 10px; }
+        .slider-row label { display: block; font-size: 12px; color: #ccc; margin-bottom: 3px; }
+        .slider-row .slider-wrap { display: flex; align-items: center; gap: 8px; }
+        .slider-row input[type="range"] { flex: 1; accent-color: #4CAF50; }
+        .slider-row .val { font-size: 12px; min-width: 35px; text-align: right; }
+
+        .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+        .checkbox-row input { accent-color: #4CAF50; }
+
+        .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+        .input-row input[type="number"] {
+            width: 60px; padding: 4px 6px; background: #2b2b2b; border: 1px solid #555;
+            border-radius: 3px; color: #fff; font-size: 13px;
+        }
+        .hint { font-size: 11px; color: #888; margin-left: 20px; margin-bottom: 8px; }
+
+        .settings-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .settings-btns .btn { flex: 1; font-size: 12px; padding: 6px 10px; }
+
+        .bottom-bar { display: flex; justify-content: space-between; margin-top: 15px; }
+        .bottom-bar .right-btns { display: flex; gap: 10px; }
+
+        .progress-bar { margin-top: 10px; display: none; }
+        .progress-bar .bar { height: 6px; background: #555; border-radius: 3px; overflow: hidden; }
+        .progress-bar .fill { height: 100%; background: #4CAF50; transition: width 0.3s; width: 0%; }
+        .progress-bar .text { font-size: 12px; color: #4CAF50; text-align: center; margin-top: 5px; }
+
+        .hidden { display: none; }
+
+        @media (max-width: 900px) {
+            .step2-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- STEP 1 -->
+        <div id="step1">
+            <h1>Ticket Generator - Korak 1: Ucitaj CSV</h1>
+
+            <div class="drop-zone" id="dropZone">
+                <div class="icon">&#128194;</div>
+                <p>Prevucite CSV fajl ovdje<br>(Drag & Drop)</p>
+            </div>
+
+            <input type="file" id="fileInput" accept=".csv" class="hidden">
+
+            <div class="buttons-row">
+                <button class="btn btn-green" onclick="document.getElementById('fileInput').click()">Izaberite CSV fajl</button>
+                <button class="btn btn-blue" id="nextBtn" disabled onclick="goToStep2()">Dalje &#10145;</button>
+            </div>
+
+            <div id="step1Status" class="status hidden"></div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div id="step2" class="hidden">
+            <h1 id="step2Title">Ticket Generator - Korak 2: Generisi PDF</h1>
+
+            <div class="step2-layout">
+                <!-- Left: Zone list -->
+                <div>
+                    <h2>Zone:</h2>
+                    <div class="zone-list" id="zoneList"></div>
+                    <div style="margin-top:10px">
+                        <button class="btn btn-orange" onclick="selectTemplateForZone()">Izaberi template za zonu</button>
+                        <input type="file" id="templateInput" accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Center: Preview -->
+                <div class="preview-panel">
+                    <h2>Live Preview</h2>
+                    <div id="previewArea">
+                        <div class="preview-placeholder">Izaberite zonu i template za preview</div>
+                    </div>
+                </div>
+
+                <!-- Right: Settings -->
+                <div class="settings-panel">
+                    <h2>Podesavanja pozicije</h2>
+
+                    <div class="settings-group">
+                        <h3>QR Kod</h3>
+                        <div class="slider-row">
+                            <label>X pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="75" id="qr_x_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="qr_x_percent_val">75</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Y pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="50" id="qr_y_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="qr_y_percent_val">50</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Velicina (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="5" max="50" value="20" id="qr_size_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="qr_size_percent_val">20</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 style="color:#FF9800">Ordinal</h3>
+                        <div class="slider-row">
+                            <label>X pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="75" id="ordinal_x_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="ordinal_x_percent_val">75</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Y pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="35" id="ordinal_y_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="ordinal_y_percent_val">35</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Font:</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="10" max="72" value="36" id="ordinal_font_size" oninput="onSettingChange(this)">
+                                <span class="val" id="ordinal_font_size_val">36</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 style="color:#2196F3">Ticket ID</h3>
+                        <div class="slider-row">
+                            <label>X pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="75" id="ticket_id_x_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="ticket_id_x_percent_val">75</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Y pozicija (%):</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="0" max="100" value="75" id="ticket_id_y_percent" oninput="onSettingChange(this)">
+                                <span class="val" id="ticket_id_y_percent_val">75</span>
+                            </div>
+                        </div>
+                        <div class="slider-row">
+                            <label>Font:</label>
+                            <div class="slider-wrap">
+                                <input type="range" min="10" max="72" value="24" id="ticket_id_font_size" oninput="onSettingChange(this)">
+                                <span class="val" id="ticket_id_font_size_val">24</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color:#555; margin: 10px 0;">
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="optimize_pdf" checked>
+                        <label for="optimize_pdf">Optimizuj PDF (manji fajl)</label>
+                    </div>
+                    <div class="hint">JPEG kompresija, manja rezolucija</div>
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="reorder_for_cutting">
+                        <label for="reorder_for_cutting">Preuredi za sijecenje</label>
+                    </div>
+                    <div class="hint">Ordinal-i dolaze jedan ispod drugog</div>
+
+                    <div class="input-row">
+                        <label for="pages_per_deck">Stranica po spilu:</label>
+                        <input type="number" id="pages_per_deck" value="100" min="1">
+                    </div>
+
+                    <div class="settings-btns">
+                        <button class="btn btn-gray" onclick="saveSettings()">Sacuvaj</button>
+                        <button class="btn btn-gray" onclick="loadSettings()">Ucitaj</button>
+                        <input type="file" id="settingsInput" accept=".json" class="hidden">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-gray" onclick="goToStep1()">&#11013; Nazad</button>
+                <div class="right-btns">
+                    <button class="btn btn-blue" id="genSelectedBtn" onclick="generateSelected()">Generisi za izabranu zonu</button>
+                    <button class="btn btn-green" id="genAllBtn" onclick="generateAll()">Generisi SVE ulaznice</button>
+                </div>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="bar"><div class="fill" id="progressFill"></div></div>
+                <div class="text" id="progressText">0%</div>
+            </div>
+
+            <div id="step2Status" class="status hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // App state
+        let zonesData = {};  // { zoneName: { tickets: [...], count: N, templateB64: null } }
+        let selectedZone = null;
+        let eventName = '';
+        let previewDebounce = null;
+
+        // ========== STEP 1 ==========
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processCSV(file);
+        });
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
+
+        async function processCSV(file) {
+            if (!file.name.endsWith('.csv')) {
+                showStatus('step1Status', 'Molimo izaberite CSV fajl!', 'error');
+                return;
+            }
+
+            eventName = file.name.replace('.csv', '');
+            showStatus('step1Status', 'Procesiranje...', 'info');
+
+            try {
+                const text = await file.text();
+                const resp = await fetch('/api/parse_csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csv: text })
+                });
+
+                const data = await resp.json();
+                if (!resp.ok) {
+                    showStatus('step1Status', data.error || 'Greska pri procesiranju', 'error');
+                    return;
+                }
+
+                zonesData = {};
+                for (const [zoneName, zoneInfo] of Object.entries(data.zones)) {
+                    zonesData[zoneName] = {
+                        tickets: zoneInfo.tickets,
+                        count: zoneInfo.count,
+                        templateB64: null
+                    };
+                }
+
+                const zoneNames = Object.keys(zonesData);
+                const zoneLines = zoneNames.map(z => `  \u2022 ${z} (${zonesData[z].count} karata)`).join('\n');
+                showStatus('step1Status',
+                    `Uspjesno procesiranje!\n\nEvent: ${eventName}\nUkupno karata: ${data.total_tickets}\nZone kreirane: ${zoneNames.length}\n\nZone:\n${zoneLines}`,
+                    'success'
+                );
+                document.getElementById('nextBtn').disabled = false;
+
+            } catch (err) {
+                showStatus('step1Status', 'Greska: ' + err.message, 'error');
+            }
+        }
+
+        function goToStep2() {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('step2Title').textContent = `Ticket Generator - Korak 2: Generisi PDF | Event: ${eventName}`;
+            renderZoneList();
+        }
+
+        function goToStep1() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        }
+
+        // ========== STEP 2 ==========
+
+        function renderZoneList() {
+            const list = document.getElementById('zoneList');
+            list.innerHTML = '';
+            for (const [zoneName, info] of Object.entries(zonesData)) {
+                const div = document.createElement('div');
+                div.className = 'zone-item' + (zoneName === selectedZone ? ' selected' : '');
+                const icon = info.templateB64 ? '\u2705' : '\u274C';
+                div.innerHTML = `<span class="status-icon">${icon}</span> ${zoneName} (${info.count} karata)`;
+                div.onclick = () => selectZone(zoneName);
+                list.appendChild(div);
+            }
+        }
+
+        function selectZone(zoneName) {
+            selectedZone = zoneName;
+            renderZoneList();
+            updatePreview();
+        }
+
+        // Template upload
+        const templateInput = document.getElementById('templateInput');
+        function selectTemplateForZone() {
+            if (!selectedZone) { alert('Izaberite zonu!'); return; }
+            templateInput.click();
+        }
+        templateInput.addEventListener('change', async e => {
+            const file = e.target.files[0];
+            if (!file || !selectedZone) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const b64 = reader.result.split(',')[1];
+                zonesData[selectedZone].templateB64 = b64;
+                renderZoneList();
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+            templateInput.value = '';
+        });
+
+        // Settings
+        function getSettings() {
+            return {
+                qr_x_percent: parseFloat(document.getElementById('qr_x_percent').value),
+                qr_y_percent: parseFloat(document.getElementById('qr_y_percent').value),
+                qr_size_percent: parseFloat(document.getElementById('qr_size_percent').value),
+                ordinal_x_percent: parseFloat(document.getElementById('ordinal_x_percent').value),
+                ordinal_y_percent: parseFloat(document.getElementById('ordinal_y_percent').value),
+                ordinal_font_size: parseInt(document.getElementById('ordinal_font_size').value),
+                ticket_id_x_percent: parseFloat(document.getElementById('ticket_id_x_percent').value),
+                ticket_id_y_percent: parseFloat(document.getElementById('ticket_id_y_percent').value),
+                ticket_id_font_size: parseInt(document.getElementById('ticket_id_font_size').value),
+                optimize_pdf: document.getElementById('optimize_pdf').checked,
+                reorder_for_cutting: document.getElementById('reorder_for_cutting').checked,
+                pages_per_deck: parseInt(document.getElementById('pages_per_deck').value) || 100
+            };
+        }
+
+        function setSettings(s) {
+            const fields = ['qr_x_percent','qr_y_percent','qr_size_percent','ordinal_x_percent','ordinal_y_percent',
+                'ordinal_font_size','ticket_id_x_percent','ticket_id_y_percent','ticket_id_font_size'];
+            fields.forEach(f => {
+                if (s[f] !== undefined) {
+                    document.getElementById(f).value = s[f];
+                    document.getElementById(f + '_val').textContent = s[f];
+                }
+            });
+            if (s.optimize_pdf !== undefined) document.getElementById('optimize_pdf').checked = s.optimize_pdf;
+            if (s.reorder_for_cutting !== undefined) document.getElementById('reorder_for_cutting').checked = s.reorder_for_cutting;
+            if (s.pages_per_deck !== undefined) document.getElementById('pages_per_deck').value = s.pages_per_deck;
+        }
+
+        function onSettingChange(el) {
+            document.getElementById(el.id + '_val').textContent = el.value;
+            schedulePreviewUpdate();
+        }
+
+        function schedulePreviewUpdate() {
+            clearTimeout(previewDebounce);
+            previewDebounce = setTimeout(updatePreview, 300);
+        }
+
+        async function updatePreview() {
+            if (!selectedZone || !zonesData[selectedZone]?.templateB64) {
+                document.getElementById('previewArea').innerHTML = '<div class="preview-placeholder">Izaberite zonu i template za preview</div>';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template: zonesData[selectedZone].templateB64,
+                        settings: getSettings()
+                    })
+                });
+
+                if (!resp.ok) throw new Error('Preview failed');
+
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                document.getElementById('previewArea').innerHTML = `<img src="${url}" alt="Preview">`;
+            } catch (err) {
+                document.getElementById('previewArea').innerHTML = `<div class="preview-placeholder" style="color:#f44336">Greska pri generisanju preview-a</div>`;
+            }
+        }
+
+        // Save/Load settings
+        function saveSettings() {
+            const s = getSettings();
+            const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ticket_settings.json';
+            a.click();
+        }
+
+        const settingsInput = document.getElementById('settingsInput');
+        function loadSettings() { settingsInput.click(); }
+        settingsInput.addEventListener('change', async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const s = JSON.parse(text);
+                setSettings(s);
+                updatePreview();
+            } catch (err) { alert('Greska pri ucitavanju podesavanja: ' + err.message); }
+            settingsInput.value = '';
+        });
+
+        // PDF Generation
+        async function generateForZone(zoneName) {
+            const zone = zonesData[zoneName];
+            if (!zone.templateB64) {
+                showStatus('step2Status', `${zoneName}: Nema template!`, 'error');
+                return false;
+            }
+
+            const settings = getSettings();
+
+            try {
+                const resp = await fetch('/api/generate_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template: zone.templateB64,
+                        tickets: zone.tickets,
+                        settings: settings,
+                        zone_name: zoneName
+                    })
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.error || 'PDF generation failed');
+                }
+
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${zoneName}_tickets.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+                return true;
+
+            } catch (err) {
+                showStatus('step2Status', `Greska za ${zoneName}: ${err.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function generateSelected() {
+            if (!selectedZone) { alert('Izaberite zonu!'); return; }
+            setGenerating(true);
+            showProgress(0, `Generisem: ${selectedZone}`);
+
+            const ok = await generateForZone(selectedZone);
+            if (ok) showStatus('step2Status', `PDF generisan: ${selectedZone}_tickets.pdf (${zonesData[selectedZone].count} karata)`, 'success');
+
+            hideProgress();
+            setGenerating(false);
+        }
+
+        async function generateAll() {
+            const zonesToGen = Object.entries(zonesData).filter(([_, z]) => z.templateB64);
+            if (zonesToGen.length === 0) { alert('Nema zona sa template-om!'); return; }
+
+            const zonesWithout = Object.entries(zonesData).filter(([_, z]) => !z.templateB64).map(([n]) => n);
+            if (zonesWithout.length > 0) {
+                if (!confirm(`Zone bez template-a: ${zonesWithout.join(', ')}\n\nNastaviti sa ostalim zonama?`)) return;
+            }
+
+            setGenerating(true);
+            let done = 0;
+
+            for (const [zoneName] of zonesToGen) {
+                showProgress(done / zonesToGen.length * 100, `Generisem: ${zoneName} (${done + 1}/${zonesToGen.length})`);
+                await generateForZone(zoneName);
+                done++;
+            }
+
+            showProgress(100, 'Zavrseno!');
+            showStatus('step2Status', `Zavrseno! Generisano ${done} PDF fajlova.`, 'success');
+            setTimeout(hideProgress, 2000);
+            setGenerating(false);
+        }
+
+        function setGenerating(v) {
+            document.getElementById('genSelectedBtn').disabled = v;
+            document.getElementById('genAllBtn').disabled = v;
+        }
+
+        function showProgress(percent, text) {
+            const bar = document.getElementById('progressBar');
+            bar.style.display = 'block';
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text || (Math.round(percent) + '%');
+        }
+
+        function hideProgress() {
+            document.getElementById('progressBar').style.display = 'none';
+        }
+
+        function showStatus(id, msg, type) {
+            const el = document.getElementById(id);
+            el.className = 'status ' + type;
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
