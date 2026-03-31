@@ -103,16 +103,20 @@
                 <div class="slider-row"><label>Velicina (%):</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
             </div>
             <div class="settings-group">
-                <h3 style="color:#FF9800">Redni broj</h3>
+                <h3 style="color:#FF9800"><input type="checkbox" id="showOrd" checked onchange="schedUpdate()"> Redni broj</h3>
+                <div id="ordSettings">
                 <div class="slider-row"><label>X pozicija (%):</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
                 <div class="slider-row"><label>Y pozicija (%):</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
                 <div class="slider-row"><label>Font:</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
+                </div>
             </div>
             <div class="settings-group">
-                <h3 style="color:#2196F3">Ticket ID</h3>
+                <h3 style="color:#2196F3"><input type="checkbox" id="showTid" checked onchange="schedUpdate()"> Ticket ID</h3>
+                <div id="tidSettings">
                 <div class="slider-row"><label>X pozicija (%):</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
                 <div class="slider-row"><label>Y pozicija (%):</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
                 <div class="slider-row"><label>Font:</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
+                </div>
             </div>
             <hr style="border-color:#555; margin: 8px 0;">
             <div class="input-row"><label for="perPage">Karata po stranici:</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
@@ -206,7 +210,9 @@ function checkReady() { document.getElementById('genBtn').disabled = !(tickets.l
 function S() {
     return {
         qr_x:N('qr_x'), qr_y:N('qr_y'), qr_size:N('qr_size'),
+        showOrd: document.getElementById('showOrd').checked,
         ord_x:N('ord_x'), ord_y:N('ord_y'), ord_fs:N('ord_fs'),
+        showTid: document.getElementById('showTid').checked,
         tid_x:N('tid_x'), tid_y:N('tid_y'), tid_fs:N('tid_fs'),
         perPage: parseInt(document.getElementById('perPage').value)||4,
         optimize: document.getElementById('optimizePdf').checked,
@@ -215,7 +221,12 @@ function S() {
     };
 }
 function N(id){return parseFloat(document.getElementById(id).value);}
-function onSlider(el){document.getElementById(el.id+'_v').textContent=el.value; clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview,150);}
+function onSlider(el){document.getElementById(el.id+'_v').textContent=el.value; schedUpdate();}
+function schedUpdate(){
+    document.getElementById('ordSettings').style.display=document.getElementById('showOrd').checked?'':'none';
+    document.getElementById('tidSettings').style.display=document.getElementById('showTid').checked?'':'none';
+    clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview,150);
+}
 
 function saveSettings() {
     const b=new Blob([JSON.stringify(S(),null,2)],{type:'application/json'});
@@ -230,7 +241,9 @@ document.getElementById('loadInput').addEventListener('change', async e => {
         if(s.optimize!==undefined) document.getElementById('optimizePdf').checked=s.optimize;
         if(s.reorder!==undefined) document.getElementById('reorderCut').checked=s.reorder;
         if(s.pagesPerDeck) document.getElementById('pagesPerDeck').value=s.pagesPerDeck;
-        updatePreview();
+        if(s.showOrd!==undefined) document.getElementById('showOrd').checked=s.showOrd;
+        if(s.showTid!==undefined) document.getElementById('showTid').checked=s.showTid;
+        schedUpdate();
     } catch(e){alert('Greska: '+e.message);}
     e.target.value='';
 });
@@ -267,8 +280,8 @@ async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
         ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/5); ctx.strokeText(text,x,y);
         ctx.fillStyle='black'; ctx.fillText(text,x,y);
     }
-    if(ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
-    txt(ticketId,Math.round(w*s.tid_x/100),Math.round(h*s.tid_y/100),s.tid_fs);
+    if(s.showOrd && ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
+    if(s.showTid) txt(ticketId,Math.round(w*s.tid_x/100),Math.round(h*s.tid_y/100),s.tid_fs);
     return canvas;
 }
 
