@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Generator</title>
+    <title>Ticket Generator Pro</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #2b2b2b; color: #fff; min-height: 100vh; }
@@ -101,7 +101,7 @@
     <div class="container">
         <!-- STEP 1 -->
         <div id="step1">
-            <h1>Ticket Generator - Korak 1: Ucitaj CSV</h1>
+            <h1>Ticket Generator Pro - Korak 1: Ucitaj CSV</h1>
 
             <div class="drop-zone" id="dropZone">
                 <div class="icon">&#128194;</div>
@@ -335,7 +335,7 @@
         function goToStep2() {
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
-            document.getElementById('step2Title').textContent = `Ticket Generator - Korak 2: Generisi PDF | Event: ${eventName}`;
+            document.getElementById('step2Title').textContent = `Ticket Generator Pro - Korak 2: Generisi PDF | Event: ${eventName}`;
             renderZoneList();
         }
 
