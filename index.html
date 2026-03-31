@@ -256,6 +256,9 @@ async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
     const qs=Math.round(w*s.qr_size/100);
     const qx=Math.max(0,Math.round(w*s.qr_x/100-qs/2));
     const qy=Math.max(0,Math.round(h*s.qr_y/100-qs/2));
+    const padding = Math.round(qs * 0.08);
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(qx - padding, qy - padding, qs + padding*2, qs + padding*2);
     const qimg=await loadImg(qrURL(qrData,qs));
     ctx.drawImage(qimg,qx,qy,qs,qs);
     function txt(text,x,y,fontSize){
