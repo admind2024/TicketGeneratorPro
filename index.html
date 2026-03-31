@@ -275,8 +275,12 @@ async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
 async function updatePreview(){
     const box=document.getElementById('previewBox');
     if(!templateDataURL){box.innerHTML='<p style="color:#888">Ucitaj sliku za preview</p>';return;}
-    try{const img=await loadImg(templateDataURL);const c=await renderTicket(img,'SAMPLE-TICKET-ID','https://example.com/qr',1,S(),700);box.innerHTML='';box.appendChild(c);}
-    catch(e){box.innerHTML='<p style="color:#f44336">Greska u preview-u</p>';}
+    try{
+        const img=await loadImg(templateDataURL);
+        const c=await renderTicket(img,'SAMPLE-TICKET-ID','test123',1,S(),700);
+        box.innerHTML='';
+        box.appendChild(c);
+    } catch(e){ console.error('Preview error:',e); }
 }
 
 // PDF
