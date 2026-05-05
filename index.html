@@ -12,96 +12,86 @@
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4ea; min-height: 100vh; }
         .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
-        /* Header */
-        .header { text-align: center; margin-bottom: 28px; }
+        .header { text-align: center; margin-bottom: 20px; }
         .header h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
         .header p { color: #6b7280; font-size: 13px; margin-top: 4px; }
 
-        /* Cards */
-        .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 14px; padding: 20px; }
+        /* Tabs */
+        .tabs-nav { display: flex; gap: 4px; margin-bottom: 20px; background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 4px; }
+        .tab-btn { flex: 1; padding: 9px 16px; border: none; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; color: #6b7280; background: transparent; transition: all 0.2s; }
+        .tab-btn:hover { color: #e1e4ea; background: #2a2d3a; }
+        .tab-btn.active { color: #fff; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        /* Layout */
+        .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 14px; padding: 20px; }
         .main-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
         .left-col { display: flex; flex-direction: column; gap: 16px; }
 
-        /* Upload boxes */
         .uploads-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .uploads-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
         .upload-label { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
         .upload-box {
-            border: 2px dashed #2a2d3a; border-radius: 12px; padding: 28px 16px;
+            border: 2px dashed #2a2d3a; border-radius: 12px; padding: 22px 12px;
             text-align: center; background: #13151d; cursor: pointer; transition: all 0.25s ease;
         }
         .upload-box:hover { border-color: #6366f1; background: #181b28; }
         .upload-box.dragover { border-color: #6366f1; background: #1e2035; box-shadow: 0 0 20px rgba(99,102,241,0.15); }
-        .upload-box .icon { font-size: 28px; margin-bottom: 8px; filter: grayscale(0.3); }
-        .upload-box p { color: #6b7280; font-size: 13px; }
+        .upload-box .icon { font-size: 26px; margin-bottom: 6px; }
+        .upload-box p { color: #6b7280; font-size: 12px; }
+        .upload-box small { color: #4b5563; font-size: 10px; display: block; margin-top: 3px; }
         .upload-box.done { border-color: #22c55e; border-style: solid; background: #0f1a14; }
         .upload-box.done p { color: #22c55e; font-weight: 500; }
 
-        /* Preview */
         .preview-box {
             background: #13151d; border-radius: 12px; padding: 16px; text-align: center;
-            min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 1px solid #2a2d3a;
         }
-        .preview-box canvas { max-width: 100%; max-height: 360px; border-radius: 8px; }
+        .preview-box canvas { max-width: 100%; max-height: 320px; border-radius: 6px; }
         .preview-box p { color: #4b5563; font-size: 13px; }
 
-        /* Settings panel */
+        /* Double-sided preview */
+        .preview-dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .preview-side { background: #13151d; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #2a2d3a; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .preview-side-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .preview-side canvas { max-width: 100%; max-height: 200px; border-radius: 4px; }
+        .preview-side p { color: #4b5563; font-size: 12px; }
+
+        /* Bleed info */
+        .bleed-info { background: #0c1629; border: 1px solid #1e3a5f; border-radius: 10px; padding: 12px 14px; font-size: 12px; color: #60a5fa; line-height: 1.6; }
+        .bleed-info strong { color: #93c5fd; }
+
         .settings-panel { display: flex; flex-direction: column; gap: 4px; }
         .settings-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 14px; padding: 16px; }
 
-        .section-header {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
-        }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
         .section-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .section-title .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-        /* Toggle switch */
         .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; }
         .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle .track {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: #374151; border-radius: 20px; transition: 0.25s;
-        }
-        .toggle .track::before {
-            content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px;
-            background: #fff; border-radius: 50%; transition: 0.25s;
-        }
+        .toggle .track { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #374151; border-radius: 20px; transition: 0.25s; }
+        .toggle .track::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.25s; }
         .toggle input:checked + .track { background: #6366f1; }
         .toggle input:checked + .track::before { transform: translateX(16px); }
 
-        /* Sliders */
         .slider-row { margin-bottom: 8px; }
         .slider-row label { display: block; font-size: 11px; color: #6b7280; margin-bottom: 3px; }
         .slider-row .sw { display: flex; align-items: center; gap: 8px; }
-        .slider-row input[type="range"] {
-            flex: 1; -webkit-appearance: none; appearance: none; height: 4px;
-            background: #2a2d3a; border-radius: 4px; outline: none;
-        }
-        .slider-row input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-            background: #6366f1; cursor: pointer; border: 2px solid #1a1d27;
-            box-shadow: 0 0 6px rgba(99,102,241,0.4);
-        }
+        .slider-row input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; background: #2a2d3a; border-radius: 4px; outline: none; }
+        .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #6366f1; cursor: pointer; border: 2px solid #1a1d27; box-shadow: 0 0 6px rgba(99,102,241,0.4); }
         .slider-row .val { font-size: 11px; color: #9ca3af; min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
 
         .collapsible { overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; max-height: 200px; opacity: 1; }
         .collapsible.collapsed { max-height: 0; opacity: 0; margin: 0; }
 
-        /* Options */
         .opt-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #9ca3af; }
-        .opt-row input[type="number"] {
-            width: 52px; padding: 4px 6px; background: #13151d; border: 1px solid #2a2d3a;
-            border-radius: 6px; color: #e1e4ea; font-size: 12px; font-family: inherit;
-        }
+        .opt-row input[type="number"] { width: 52px; padding: 4px 6px; background: #13151d; border: 1px solid #2a2d3a; border-radius: 6px; color: #e1e4ea; font-size: 12px; font-family: inherit; }
+        .opt-row select { flex: 1; padding: 5px 8px; background: #13151d; border: 1px solid #2a2d3a; border-radius: 6px; color: #e1e4ea; font-size: 12px; font-family: inherit; cursor: pointer; }
         .opt-row input[type="checkbox"] { accent-color: #6366f1; }
 
-        /* Buttons */
-        .btn {
-            padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer;
-            font-size: 13px; font-weight: 600; font-family: inherit; color: #fff; transition: all 0.2s;
-        }
+        .btn { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; color: #fff; transition: all 0.2s; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn:active { transform: translateY(0); }
@@ -112,13 +102,11 @@
         .bottom-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
         .bottom-left { display: flex; gap: 8px; }
 
-        /* Progress */
         .progress-bar { margin-top: 12px; display: none; }
         .progress-bar .bar { height: 4px; background: #2a2d3a; border-radius: 4px; overflow: hidden; }
         .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 0.2s; width: 0%; }
         .progress-bar .text { font-size: 12px; color: #8b5cf6; text-align: center; margin-top: 6px; }
 
-        /* Status */
         .status { margin-top: 10px; padding: 10px 14px; border-radius: 10px; white-space: pre-line; font-size: 12px; }
         .status.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
         .status.error { background: #2a0a0a; color: #f87171; border: 1px solid #7f1d1d; }
@@ -127,7 +115,8 @@
 
         @media (max-width: 800px) {
             .main-layout { grid-template-columns: 1fr; }
-            .uploads-row { grid-template-columns: 1fr; }
+            .uploads-row, .uploads-row-3 { grid-template-columns: 1fr; }
+            .preview-dual { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -138,101 +127,215 @@
         <p>Generisi PDF ulaznice sa QR kodovima</p>
     </div>
 
-    <div class="main-layout">
-        <div class="left-col">
-            <div class="uploads-row">
-                <div>
-                    <div class="upload-label">1. CSV fajl</div>
-                    <div class="upload-box" id="csvBox">
-                        <div class="icon">&#128196;</div>
-                        <p>Klikni ili prevuci CSV</p>
+    <!-- Tab navigation -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab(1)">Standardni PDF</button>
+        <button class="tab-btn" onclick="switchTab(2)">Dvostrana štampa</button>
+    </div>
+
+    <!-- ===== TAB 1: STANDARDNI ===== -->
+    <div id="tab1" class="tab-content active">
+        <div class="main-layout">
+            <div class="left-col">
+                <div class="uploads-row">
+                    <div>
+                        <div class="upload-label">1. CSV fajl</div>
+                        <div class="upload-box" id="csvBox">
+                            <div class="icon">&#128196;</div>
+                            <p>Klikni ili prevuci CSV</p>
+                        </div>
+                        <input type="file" id="csvInput" accept=".csv" class="hidden">
                     </div>
-                    <input type="file" id="csvInput" accept=".csv" class="hidden">
-                </div>
-                <div>
-                    <div class="upload-label">2. Dizajn karte</div>
-                    <div class="upload-box" id="imgBox">
-                        <div class="icon">&#128444;</div>
-                        <p>Klikni ili prevuci sliku</p>
+                    <div>
+                        <div class="upload-label">2. Dizajn karte</div>
+                        <div class="upload-box" id="imgBox">
+                            <div class="icon">&#128444;</div>
+                            <p>Klikni ili prevuci sliku</p>
+                        </div>
+                        <input type="file" id="imgInput" accept="image/*" class="hidden">
                     </div>
-                    <input type="file" id="imgInput" accept="image/*" class="hidden">
+                </div>
+                <div class="preview-box" id="previewBox">
+                    <p>Ucitaj CSV i sliku za preview</p>
                 </div>
             </div>
-            <div class="preview-box" id="previewBox">
-                <p>Ucitaj CSV i sliku za preview</p>
+
+            <div class="settings-panel">
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod</div>
+                    </div>
+                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
+                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
+                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Redni broj</div>
+                        <label class="toggle"><input type="checkbox" id="showOrd" checked onchange="toggleSection()"><span class="track"></span></label>
+                    </div>
+                    <div class="collapsible" id="ordSettings">
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#3b82f6"></span> Ticket ID</div>
+                        <label class="toggle"><input type="checkbox" id="showTid" checked onchange="toggleSection()"><span class="track"></span></label>
+                    </div>
+                    <div class="collapsible" id="tidSettings">
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije</div>
+                    </div>
+                    <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
+                    <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
+                    <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
+                    <div class="opt-row"><label for="pagesPerDeck">Str. po spilu</label><input type="number" id="pagesPerDeck" value="100" min="1"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="bottom-left">
+                <button class="btn btn-secondary" onclick="saveSettings()">Sacuvaj podesavanja</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('loadInput').click()">Ucitaj podesavanja</button>
+                <input type="file" id="loadInput" accept=".json" class="hidden">
+            </div>
+            <button class="btn btn-primary" id="genBtn" onclick="generate()" disabled>Generisi PDF</button>
+        </div>
+        <div class="progress-bar" id="progBar">
+            <div class="bar"><div class="fill" id="progFill"></div></div>
+            <div class="text" id="progText">0%</div>
+        </div>
+        <div id="statusBox" class="status hidden"></div>
+    </div>
+
+    <!-- ===== TAB 2: DVOSTRANA ŠTAMPA ===== -->
+    <div id="tab2" class="tab-content">
+        <div class="main-layout">
+            <div class="left-col">
+
+                <div class="bleed-info">
+                    <strong>Dimenzije sa prepustom:</strong> 200 × 97 mm (20 × 9.7 cm) &nbsp;|&nbsp;
+                    <strong>Trim (karta):</strong> 194 × 91 mm &nbsp;|&nbsp;
+                    <strong>Prepust:</strong> 3mm sa svih strana &nbsp;|&nbsp;
+                    Jedna karta po stranici PDF-a
+                </div>
+
+                <div class="uploads-row-3">
+                    <div>
+                        <div class="upload-label">1. CSV fajl</div>
+                        <label class="upload-box" id="dCsvBox" for="dCsvInput">
+                            <div class="icon">&#128196;</div>
+                            <p>Klikni ili prevuci CSV</p>
+                        </label>
+                        <input type="file" id="dCsvInput" accept=".csv" class="hidden">
+                    </div>
+                    <div>
+                        <div class="upload-label">2. Prednja strana</div>
+                        <label class="upload-box" id="dFrontBox" for="dFrontInput">
+                            <div class="icon">&#127795;</div>
+                            <p>Prednja strana</p>
+                            <small>200×97mm (20×9.7cm)</small>
+                        </label>
+                        <input type="file" id="dFrontInput" accept="image/*" class="hidden">
+                    </div>
+                    <div>
+                        <div class="upload-label">3. Zadnja strana</div>
+                        <label class="upload-box" id="dBackBox" for="dBackInput">
+                            <div class="icon">&#127796;</div>
+                            <p>Zadnja strana</p>
+                            <small>200×97mm (20×9.7cm)</small>
+                        </label>
+                        <input type="file" id="dBackInput" accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <div class="preview-dual">
+                    <div class="preview-side" id="dPreviewFront">
+                        <div class="preview-side-label">Prednja strana</div>
+                        <p>Ucitaj prednju stranu</p>
+                    </div>
+                    <div class="preview-side" id="dPreviewBack">
+                        <div class="preview-side-label">Zadnja strana</div>
+                        <p>Ucitaj zadnju stranu</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod (prednja)</div>
+                    </div>
+                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_qr_x" oninput="onSliderD(this)"><span class="val" id="d_qr_x_v">85</span></div></div>
+                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="d_qr_y" oninput="onSliderD(this)"><span class="val" id="d_qr_y_v">50</span></div></div>
+                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="d_qr_size" oninput="onSliderD(this)"><span class="val" id="d_qr_size_v">16</span></div></div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Redni broj</div>
+                        <label class="toggle"><input type="checkbox" id="dShowOrd" checked onchange="toggleSectionD()"><span class="track"></span></label>
+                    </div>
+                    <div class="collapsible" id="dOrdSettings">
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_ord_x" oninput="onSliderD(this)"><span class="val" id="d_ord_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="d_ord_y" oninput="onSliderD(this)"><span class="val" id="d_ord_y_v">30</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="d_ord_fs" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#3b82f6"></span> Ticket ID</div>
+                        <label class="toggle"><input type="checkbox" id="dShowTid" checked onchange="toggleSectionD()"><span class="track"></span></label>
+                    </div>
+                    <div class="collapsible" id="dTidSettings">
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_tid_x" oninput="onSliderD(this)"><span class="val" id="d_tid_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="d_tid_y" oninput="onSliderD(this)"><span class="val" id="d_tid_y_v">72</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="d_tid_fs" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije štampe</div>
+                    </div>
+                    <div class="opt-row">
+                        <label for="dPrintOrder">Raspored stranica</label>
+                        <select id="dPrintOrder">
+                            <option value="interleaved">Isprepletano (P1-Z1-P2-Z2)</option>
+                            <option value="separated">Odvojeno (sve P, sve Z)</option>
+                        </select>
+                    </div>
+                    <div class="opt-row"><input type="checkbox" id="dCropMarks" checked><label for="dCropMarks">Oznake za rezanje</label></div>
+                </div>
             </div>
         </div>
 
-        <div class="settings-panel">
-            <!-- QR Code -->
-            <div class="settings-card">
-                <div class="section-header">
-                    <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod</div>
-                </div>
-                <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
-                <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
-                <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
+        <div class="bottom-bar">
+            <div class="bottom-left">
+                <button class="btn btn-secondary" onclick="saveSettingsD()">Sacuvaj podesavanja</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('dLoadInput').click()">Ucitaj podesavanja</button>
+                <input type="file" id="dLoadInput" accept=".json" class="hidden">
             </div>
-
-            <!-- Ordinal -->
-            <div class="settings-card">
-                <div class="section-header">
-                    <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Redni broj</div>
-                    <label class="toggle"><input type="checkbox" id="showOrd" checked onchange="toggleSection()"><span class="track"></span></label>
-                </div>
-                <div class="collapsible" id="ordSettings">
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
-                    <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
-                </div>
-            </div>
-
-            <!-- Ticket ID -->
-            <div class="settings-card">
-                <div class="section-header">
-                    <div class="section-title"><span class="dot" style="background:#3b82f6"></span> Ticket ID</div>
-                    <label class="toggle"><input type="checkbox" id="showTid" checked onchange="toggleSection()"><span class="track"></span></label>
-                </div>
-                <div class="collapsible" id="tidSettings">
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
-                    <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
-                </div>
-            </div>
-
-            <!-- Options -->
-            <div class="settings-card">
-                <div class="section-header">
-                    <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije</div>
-                </div>
-                <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
-                <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
-                <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
-                <div class="opt-row"><label for="pagesPerDeck">Str. po spilu</label><input type="number" id="pagesPerDeck" value="100" min="1"></div>
-            </div>
+            <button class="btn btn-primary" id="dGenBtn" onclick="generateDouble()" disabled>Generisi PDF (dvostrano)</button>
         </div>
-    </div>
-
-    <div class="bottom-bar">
-        <div class="bottom-left">
-            <button class="btn btn-secondary" onclick="saveSettings()">Sacuvaj podesavanja</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('loadInput').click()">Ucitaj podesavanja</button>
-            <input type="file" id="loadInput" accept=".json" class="hidden">
+        <div class="progress-bar" id="dProgBar">
+            <div class="bar"><div class="fill" id="dProgFill"></div></div>
+            <div class="text" id="dProgText">0%</div>
         </div>
-        <button class="btn btn-primary" id="genBtn" onclick="generate()" disabled>Generisi PDF</button>
+        <div id="dStatusBox" class="status hidden"></div>
     </div>
-
-    <div class="progress-bar" id="progBar">
-        <div class="bar"><div class="fill" id="progFill"></div></div>
-        <div class="text" id="progText">0%</div>
-    </div>
-    <div id="statusBox" class="status hidden"></div>
 </div>
 
 <script>
-let tickets = [], templateDataURL = null, debounceTimer = null;
-
-// CSV
+// ===== SHARED HELPERS =====
 function parseCSV(text) {
     const lines = text.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV je prazan');
@@ -259,42 +362,76 @@ function csvLine(line) {
     for (let i=0;i<line.length;i++) { const ch=line[i]; if(inQ){if(ch==='"'){if(i+1<line.length&&line[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=ch;}else{if(ch==='"')inQ=true;else if(ch===','){r.push(cur);cur='';}else cur+=ch;} }
     r.push(cur); return r;
 }
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
+function qrURL(data,size){
+    const qr=qrcode(0,'M'); qr.addData(data); qr.make();
+    const mods=qr.getModuleCount();
+    const c=document.createElement('canvas'); c.width=size; c.height=size;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
+    const cs=size/mods; ctx.fillStyle='#000';
+    for(let r=0;r<mods;r++) for(let col=0;col<mods;col++) if(qr.isDark(r,col)) ctx.fillRect(col*cs,r*cs,cs,cs);
+    return c.toDataURL();
+}
+async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
+    const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
+    let w=tplImg.naturalWidth||tplImg.width, h=tplImg.naturalHeight||tplImg.height, sc=1;
+    if(maxW&&maxW<w){sc=maxW/w;w=maxW;h=Math.round(h*sc);}
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(tplImg,0,0,w,h);
+    const qs=Math.round(w*s.qr_size/100);
+    const qx=Math.max(0,Math.round(w*s.qr_x/100-qs/2));
+    const qy=Math.max(0,Math.round(h*s.qr_y/100-qs/2));
+    const pad=Math.round(qs*0.08);
+    ctx.fillStyle='#fff'; ctx.fillRect(qx-pad,qy-pad,qs+pad*2,qs+pad*2);
+    const qimg=await loadImg(qrURL(qrData,qs));
+    ctx.drawImage(qimg,qx,qy,qs,qs);
+    function txt(text,x,y,fontSize){
+        const fs=Math.max(10,Math.round(fontSize*sc));
+        ctx.font='bold '+fs+'px Inter,Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/5); ctx.strokeText(text,x,y);
+        ctx.fillStyle='black'; ctx.fillText(text,x,y);
+    }
+    if(s.showOrd && ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
+    if(s.showTid) txt(ticketId,Math.round(w*s.tid_x/100),Math.round(h*s.tid_y/100),s.tid_fs);
+    return canvas;
+}
 
-// Uploads
+// ===== TAB SWITCHING =====
+function switchTab(n) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab'+n).classList.add('active');
+    document.querySelectorAll('.tab-btn')[n-1].classList.add('active');
+}
+
+// ===== TAB 1 =====
+let tickets = [], templateDataURL = null, debounceTimer = null;
+
 const csvBox=document.getElementById('csvBox'), csvInput=document.getElementById('csvInput');
 const imgBox=document.getElementById('imgBox'), imgInput=document.getElementById('imgInput');
-
 csvBox.onclick = () => csvInput.click();
 csvBox.ondragover = e => { e.preventDefault(); csvBox.classList.add('dragover'); };
 csvBox.ondragleave = () => csvBox.classList.remove('dragover');
 csvBox.ondrop = e => { e.preventDefault(); csvBox.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleCSV(e.dataTransfer.files[0]); };
 csvInput.onchange = e => { if(e.target.files[0]) handleCSV(e.target.files[0]); };
-
 async function handleCSV(file) {
     try {
         tickets = parseCSV(await file.text());
-        csvBox.classList.add('done');
-        csvBox.querySelector('p').textContent = file.name + ' (' + tickets.length + ' karata)';
-        showMsg('CSV ucitan: ' + tickets.length + ' karata', 'success');
-        checkReady(); updatePreview();
+        csvBox.classList.add('done'); csvBox.querySelector('p').textContent = file.name + ' (' + tickets.length + ' karata)';
+        showMsg('CSV ucitan: ' + tickets.length + ' karata', 'success'); checkReady(); updatePreview();
     } catch(e) { showMsg('Greska: '+e.message, 'error'); }
 }
-
 imgBox.onclick = () => imgInput.click();
 imgBox.ondragover = e => { e.preventDefault(); imgBox.classList.add('dragover'); };
 imgBox.ondragleave = () => imgBox.classList.remove('dragover');
 imgBox.ondrop = e => { e.preventDefault(); imgBox.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleImg(e.dataTransfer.files[0]); };
 imgInput.onchange = e => { if(e.target.files[0]) handleImg(e.target.files[0]); };
-
 function handleImg(file) {
     const reader = new FileReader();
     reader.onload = () => { templateDataURL = reader.result; imgBox.classList.add('done'); imgBox.querySelector('p').textContent = file.name; checkReady(); updatePreview(); };
     reader.readAsDataURL(file);
 }
-
 function checkReady() { document.getElementById('genBtn').disabled = !(tickets.length && templateDataURL); }
-
-// Settings
 function S() {
     return {
         qr_x:N('qr_x'), qr_y:N('qr_y'), qr_size:N('qr_size'),
@@ -311,13 +448,11 @@ function S() {
 function N(id){return parseFloat(document.getElementById(id).value);}
 function onSlider(el){ document.getElementById(el.id+'_v').textContent=el.value; schedPreview(); }
 function schedPreview(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview,150); }
-
 function toggleSection(){
     document.getElementById('ordSettings').classList.toggle('collapsed', !document.getElementById('showOrd').checked);
     document.getElementById('tidSettings').classList.toggle('collapsed', !document.getElementById('showTid').checked);
     schedPreview();
 }
-
 function saveSettings() {
     const b=new Blob([JSON.stringify(S(),null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ticket_settings.json'; a.click();
@@ -337,45 +472,6 @@ document.getElementById('loadInput').onchange = async e => {
     } catch(e){alert('Greska: '+e.message);}
     e.target.value='';
 };
-
-// Canvas
-function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
-function qrURL(data,size){
-    const qr=qrcode(0,'M'); qr.addData(data); qr.make();
-    const mods=qr.getModuleCount();
-    const c=document.createElement('canvas'); c.width=size; c.height=size;
-    const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
-    const cs=size/mods; ctx.fillStyle='#000';
-    for(let r=0;r<mods;r++) for(let col=0;col<mods;col++) if(qr.isDark(r,col)) ctx.fillRect(col*cs,r*cs,cs,cs);
-    return c.toDataURL();
-}
-
-async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
-    const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
-    let w=tplImg.naturalWidth||tplImg.width, h=tplImg.naturalHeight||tplImg.height, sc=1;
-    if(maxW&&maxW<w){sc=maxW/w;w=maxW;h=Math.round(h*sc);}
-    canvas.width=w; canvas.height=h;
-    ctx.drawImage(tplImg,0,0,w,h);
-    // QR
-    const qs=Math.round(w*s.qr_size/100);
-    const qx=Math.max(0,Math.round(w*s.qr_x/100-qs/2));
-    const qy=Math.max(0,Math.round(h*s.qr_y/100-qs/2));
-    const pad=Math.round(qs*0.08);
-    ctx.fillStyle='#fff'; ctx.fillRect(qx-pad,qy-pad,qs+pad*2,qs+pad*2);
-    const qimg=await loadImg(qrURL(qrData,qs));
-    ctx.drawImage(qimg,qx,qy,qs,qs);
-    // Text
-    function txt(text,x,y,fontSize){
-        const fs=Math.max(10,Math.round(fontSize*sc));
-        ctx.font='bold '+fs+'px Inter,Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/5); ctx.strokeText(text,x,y);
-        ctx.fillStyle='black'; ctx.fillText(text,x,y);
-    }
-    if(s.showOrd && ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
-    if(s.showTid) txt(ticketId,Math.round(w*s.tid_x/100),Math.round(h*s.tid_y/100),s.tid_fs);
-    return canvas;
-}
-
 async function updatePreview(){
     const box=document.getElementById('previewBox');
     if(!templateDataURL){box.innerHTML='<p>Ucitaj sliku za preview</p>';return;}
@@ -385,8 +481,6 @@ async function updatePreview(){
         box.innerHTML=''; box.appendChild(c);
     } catch(e){ console.error('Preview error:',e); }
 }
-
-// PDF
 function reorder(tix,ppd){
     const tpp=parseInt(document.getElementById('perPage').value)||4, chunk=ppd*tpp, re=[];
     for(let ci=0;ci<Math.ceil(tix.length/chunk);ci++){
@@ -396,7 +490,6 @@ function reorder(tix,ppd){
     }
     return re;
 }
-
 async function generate(){
     if(!tickets.length||!templateDataURL)return;
     const s=S(), {jsPDF}=window.jspdf;
@@ -425,10 +518,225 @@ async function generate(){
     hideProg(); showMsg('PDF generisan! '+total+' karata, '+Math.ceil(total/tpp)+' stranica.','success');
     document.getElementById('genBtn').disabled=false;
 }
-
 function showMsg(m,t){const e=document.getElementById('statusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
 function showProg(p,t){document.getElementById('progBar').style.display='block';document.getElementById('progFill').style.width=p+'%';document.getElementById('progText').textContent=t||Math.round(p)+'%';}
 function hideProg(){document.getElementById('progBar').style.display='none';}
+
+// ===== TAB 2: DVOSTRANA ŠTAMPA =====
+// Karta sa prepustom: 200 x 97 mm (20cm x 9.7cm), prepust 3mm sa svih strana
+const BLEED_W = 200, BLEED_H = 97;
+
+let tickets2 = [], frontDataURL = null, backDataURL = null, debounceTimer2 = null;
+
+// Upload: CSV
+const dCsvBox=document.getElementById('dCsvBox'), dCsvInput=document.getElementById('dCsvInput');
+dCsvBox.ondragover = e => { e.preventDefault(); dCsvBox.classList.add('dragover'); };
+dCsvBox.ondragleave = () => dCsvBox.classList.remove('dragover');
+dCsvBox.ondrop = e => { e.preventDefault(); dCsvBox.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleCsvD(e.dataTransfer.files[0]); };
+dCsvInput.onchange = e => { if(e.target.files[0]) handleCsvD(e.target.files[0]); };
+async function handleCsvD(file) {
+    try {
+        tickets2 = parseCSV(await file.text());
+        dCsvBox.classList.add('done'); dCsvBox.querySelector('p').textContent = file.name + ' (' + tickets2.length + ' karata)';
+        showMsgD('CSV ucitan: ' + tickets2.length + ' karata', 'success'); checkReadyD();
+    } catch(e) { showMsgD('Greska: '+e.message, 'error'); }
+}
+
+// Upload: prednja strana
+const dFrontBox=document.getElementById('dFrontBox'), dFrontInput=document.getElementById('dFrontInput');
+dFrontBox.ondragover = e => { e.preventDefault(); dFrontBox.classList.add('dragover'); };
+dFrontBox.ondragleave = () => dFrontBox.classList.remove('dragover');
+dFrontBox.ondrop = e => { e.preventDefault(); dFrontBox.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleFront(e.dataTransfer.files[0]); };
+dFrontInput.onchange = e => { if(e.target.files[0]) handleFront(e.target.files[0]); };
+function handleFront(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        frontDataURL = reader.result;
+        dFrontBox.classList.add('done'); dFrontBox.querySelector('p').textContent = file.name;
+        checkReadyD(); updatePreviewD();
+    };
+    reader.readAsDataURL(file);
+}
+
+// Upload: zadnja strana
+const dBackBox=document.getElementById('dBackBox'), dBackInput=document.getElementById('dBackInput');
+dBackBox.ondragover = e => { e.preventDefault(); dBackBox.classList.add('dragover'); };
+dBackBox.ondragleave = () => dBackBox.classList.remove('dragover');
+dBackBox.ondrop = e => { e.preventDefault(); dBackBox.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleBack(e.dataTransfer.files[0]); };
+dBackInput.onchange = e => { if(e.target.files[0]) handleBack(e.target.files[0]); };
+function handleBack(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        backDataURL = reader.result;
+        dBackBox.classList.add('done'); dBackBox.querySelector('p').textContent = file.name;
+        updatePreviewD();
+    };
+    reader.readAsDataURL(file);
+}
+
+function checkReadyD() {
+    document.getElementById('dGenBtn').disabled = !(tickets2.length && frontDataURL);
+}
+
+function SD() {
+    return {
+        qr_x: ND('d_qr_x'), qr_y: ND('d_qr_y'), qr_size: ND('d_qr_size'),
+        showOrd: document.getElementById('dShowOrd').checked,
+        ord_x: ND('d_ord_x'), ord_y: ND('d_ord_y'), ord_fs: ND('d_ord_fs'),
+        showTid: document.getElementById('dShowTid').checked,
+        tid_x: ND('d_tid_x'), tid_y: ND('d_tid_y'), tid_fs: ND('d_tid_fs'),
+        printOrder: document.getElementById('dPrintOrder').value,
+        cropMarks: document.getElementById('dCropMarks').checked
+    };
+}
+function ND(id){ return parseFloat(document.getElementById(id).value); }
+function onSliderD(el){ document.getElementById(el.id+'_v').textContent=el.value; schedPreviewD(); }
+function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2=setTimeout(updatePreviewD,150); }
+function toggleSectionD(){
+    document.getElementById('dOrdSettings').classList.toggle('collapsed', !document.getElementById('dShowOrd').checked);
+    document.getElementById('dTidSettings').classList.toggle('collapsed', !document.getElementById('dShowTid').checked);
+    schedPreviewD();
+}
+
+async function updatePreviewD() {
+    const frontBox = document.getElementById('dPreviewFront');
+    const backBox  = document.getElementById('dPreviewBack');
+    if (frontDataURL) {
+        try {
+            const img = await loadImg(frontDataURL);
+            const c = await renderTicket(img, 'SAMPLE-ID', 'test123', 1, SD(), 600);
+            frontBox.innerHTML = '<div class="preview-side-label">Prednja strana</div>';
+            frontBox.appendChild(c);
+        } catch(e){ console.error(e); }
+    }
+    if (backDataURL) {
+        try {
+            const img = await loadImg(backDataURL);
+            const c = document.createElement('canvas');
+            c.width = Math.min(img.naturalWidth||img.width, 600);
+            c.height = Math.round((img.naturalHeight||img.height) * (c.width/(img.naturalWidth||img.width)));
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            backBox.innerHTML = '<div class="preview-side-label">Zadnja strana</div>';
+            backBox.appendChild(c);
+        } catch(e){ console.error(e); }
+    }
+}
+
+function saveSettingsD() {
+    const b=new Blob([JSON.stringify(SD(),null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ticket_dvostrano_settings.json'; a.click();
+}
+document.getElementById('dLoadInput').onchange = async e => {
+    const f=e.target.files[0]; if(!f) return;
+    try {
+        const s=JSON.parse(await f.text());
+        ['d_qr_x','d_qr_y','d_qr_size','d_ord_x','d_ord_y','d_ord_fs','d_tid_x','d_tid_y','d_tid_fs'].forEach(k=>{
+            if(s[k.replace('d_','')]!==undefined){
+                document.getElementById(k).value=s[k.replace('d_','')];
+                document.getElementById(k+'_v').textContent=s[k.replace('d_','')];
+            }
+        });
+        if(s.showOrd!==undefined) document.getElementById('dShowOrd').checked=s.showOrd;
+        if(s.showTid!==undefined) document.getElementById('dShowTid').checked=s.showTid;
+        if(s.printOrder) document.getElementById('dPrintOrder').value=s.printOrder;
+        toggleSectionD(); updatePreviewD();
+    } catch(e){alert('Greska: '+e.message);}
+    e.target.value='';
+};
+
+function addCropMarks(doc, pageW, pageH, bleed) {
+    const markLen = 3, gap = 0.5;
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.25);
+    // 4 ugla: [trimX, trimY, smjerX, smjerY]
+    const corners = [
+        [bleed, bleed, -1, -1],
+        [pageW - bleed, bleed, 1, -1],
+        [bleed, pageH - bleed, -1, 1],
+        [pageW - bleed, pageH - bleed, 1, 1]
+    ];
+    corners.forEach(([cx, cy, dx, dy]) => {
+        // horizontalna linija
+        doc.line(cx + dx * gap, cy, cx + dx * (gap + markLen), cy);
+        // vertikalna linija
+        doc.line(cx, cy + dy * gap, cx, cy + dy * (gap + markLen));
+    });
+}
+
+async function generateDouble() {
+    if (!tickets2.length || !frontDataURL) return;
+    const s = SD();
+    const { jsPDF } = window.jspdf;
+    const total = tickets2.length;
+    const genBtn = document.getElementById('dGenBtn');
+    genBtn.disabled = true;
+    showProgD(0, 'Pocinjem...');
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [BLEED_W, BLEED_H] });
+    const frontImg = await loadImg(frontDataURL);
+    const backImg  = backDataURL ? await loadImg(backDataURL) : null;
+
+    async function canvasToJpeg(canvas) {
+        return canvas.toDataURL('image/jpeg', 0.92);
+    }
+    function imgToCanvas(img) {
+        const c = document.createElement('canvas');
+        c.width  = img.naturalWidth  || img.width;
+        c.height = img.naturalHeight || img.height;
+        c.getContext('2d').drawImage(img, 0, 0);
+        return c;
+    }
+    async function addFront(t) {
+        const c = await renderTicket(frontImg, t.ticketId, t.qr_code, t.ordinal, s, null);
+        doc.addImage(await canvasToJpeg(c), 'JPEG', 0, 0, BLEED_W, BLEED_H);
+        if (s.cropMarks) addCropMarks(doc, BLEED_W, BLEED_H, 3);
+    }
+    async function addBack() {
+        if (backImg) {
+            doc.addImage(await canvasToJpeg(imgToCanvas(backImg)), 'JPEG', 0, 0, BLEED_W, BLEED_H);
+        } else {
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, 0, BLEED_W, BLEED_H, 'F');
+        }
+        if (s.cropMarks) addCropMarks(doc, BLEED_W, BLEED_H, 3);
+    }
+
+    if (s.printOrder === 'interleaved') {
+        // P1, Z1, P2, Z2, ...
+        for (let i = 0; i < total; i++) {
+            if (i > 0) doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            await addFront(tickets2[i]);
+            doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            await addBack();
+            showProgD((i+1)/total*100, (i+1)+'/'+total+' karata');
+            await new Promise(r => setTimeout(r, 0));
+        }
+    } else {
+        // Sve prednje, pa sve zadnje
+        for (let i = 0; i < total; i++) {
+            if (i > 0) doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            await addFront(tickets2[i]);
+            showProgD((i+1)/(total*2)*100, 'Prednje: '+(i+1)+'/'+total);
+            await new Promise(r => setTimeout(r, 0));
+        }
+        for (let i = 0; i < total; i++) {
+            doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            await addBack();
+            showProgD(50+(i+1)/(total*2)*100, 'Zadnje: '+(i+1)+'/'+total);
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    const pages = s.printOrder === 'interleaved' ? total * 2 : (backImg ? total * 2 : total);
+    doc.save('tickets-dvostrano.pdf');
+    hideProgD();
+    showMsgD('PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)', 'success');
+    genBtn.disabled = false;
+}
+
+function showMsgD(m,t){const e=document.getElementById('dStatusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
+function showProgD(p,t){document.getElementById('dProgBar').style.display='block';document.getElementById('dProgFill').style.width=p+'%';document.getElementById('dProgText').textContent=t||Math.round(p)+'%';}
+function hideProgD(){document.getElementById('dProgBar').style.display='none';}
 </script>
 </body>
 </html>
