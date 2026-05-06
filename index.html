@@ -81,7 +81,9 @@
         .slider-row .sw { display: flex; align-items: center; gap: 8px; }
         .slider-row input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; background: #2a2d3a; border-radius: 4px; outline: none; }
         .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #6366f1; cursor: pointer; border: 2px solid #1a1d27; box-shadow: 0 0 6px rgba(99,102,241,0.4); }
-        .slider-row .val { font-size: 11px; color: #9ca3af; min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+        .slider-row .val { font-size: 11px; color: #9ca3af; min-width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+        .nudge { background: #2a2d3a; border: 1px solid #374151; border-radius: 5px; color: #9ca3af; font-size: 14px; line-height: 1; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+        .nudge:hover { background: #374151; color: #e1e4ea; }
 
         .collapsible { overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; max-height: 200px; opacity: 1; }
         .collapsible.collapsed { max-height: 0; opacity: 0; margin: 0; }
@@ -165,9 +167,9 @@
                     <div class="section-header">
                         <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod</div>
                     </div>
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
-                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
+                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
+                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
+                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
                 </div>
                 <div class="settings-card">
                     <div class="section-header">
@@ -175,9 +177,9 @@
                         <label class="toggle"><input type="checkbox" id="showOrd" checked onchange="toggleSection()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="ordSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -186,9 +188,9 @@
                         <label class="toggle"><input type="checkbox" id="showTid" checked onchange="toggleSection()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="tidSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -276,9 +278,9 @@
                     <div class="section-header">
                         <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod (prednja)</div>
                     </div>
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_qr_x" oninput="onSliderD(this)"><span class="val" id="d_qr_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="d_qr_y" oninput="onSliderD(this)"><span class="val" id="d_qr_y_v">50</span></div></div>
-                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="d_qr_size" oninput="onSliderD(this)"><span class="val" id="d_qr_size_v">16</span></div></div>
+                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_qr_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_x_v">85</span></div></div>
+                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="d_qr_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_y_v">50</span></div></div>
+                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="d_qr_size" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_size_v">16</span></div></div>
                 </div>
                 <div class="settings-card">
                     <div class="section-header">
@@ -286,9 +288,9 @@
                         <label class="toggle"><input type="checkbox" id="dShowOrd" checked onchange="toggleSectionD()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="dOrdSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_ord_x" oninput="onSliderD(this)"><span class="val" id="d_ord_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="d_ord_y" oninput="onSliderD(this)"><span class="val" id="d_ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="d_ord_fs" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_ord_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="d_ord_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_y_v">30</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="d_ord_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -297,9 +299,9 @@
                         <label class="toggle"><input type="checkbox" id="dShowTid" checked onchange="toggleSectionD()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="dTidSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_tid_x" oninput="onSliderD(this)"><span class="val" id="d_tid_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="d_tid_y" oninput="onSliderD(this)"><span class="val" id="d_tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="d_tid_fs" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
+                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_tid_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_x_v">85</span></div></div>
+                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="d_tid_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_y_v">72</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="d_tid_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -446,7 +448,9 @@ function S() {
     };
 }
 function N(id){return parseFloat(document.getElementById(id).value);}
-function onSlider(el){ document.getElementById(el.id+'_v').textContent=el.value; schedPreview(); }
+function fmtVal(v){ const n=parseFloat(v); return n%1===0 ? n : n.toFixed(1); }
+function onSlider(el){ document.getElementById(el.id+'_v').textContent=fmtVal(el.value); schedPreview(); }
+function nudge(id,delta){ const el=document.getElementById(id); const nv=Math.min(parseFloat(el.max),Math.max(parseFloat(el.min),parseFloat(el.value)+delta)); el.value=nv; if(id.startsWith('d_')) onSliderD(el); else onSlider(el); }
 function schedPreview(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview,150); }
 function toggleSection(){
     document.getElementById('ordSettings').classList.toggle('collapsed', !document.getElementById('showOrd').checked);
@@ -590,7 +594,7 @@ function SD() {
     };
 }
 function ND(id){ return parseFloat(document.getElementById(id).value); }
-function onSliderD(el){ document.getElementById(el.id+'_v').textContent=el.value; schedPreviewD(); }
+function onSliderD(el){ document.getElementById(el.id+'_v').textContent=fmtVal(el.value); schedPreviewD(); }
 function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2=setTimeout(updatePreviewD,150); }
 function toggleSectionD(){
     document.getElementById('dOrdSettings').classList.toggle('collapsed', !document.getElementById('dShowOrd').checked);
@@ -737,6 +741,18 @@ async function generateDouble() {
 function showMsgD(m,t){const e=document.getElementById('dStatusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
 function showProgD(p,t){document.getElementById('dProgBar').style.display='block';document.getElementById('dProgFill').style.width=p+'%';document.getElementById('dProgText').textContent=t||Math.round(p)+'%';}
 function hideProgD(){document.getElementById('dProgBar').style.display='none';}
+
+// Inject − / + nudge buttons into every slider row
+document.querySelectorAll('.sw input[type="range"]').forEach(inp => {
+    const minus = document.createElement('button');
+    minus.className = 'nudge'; minus.textContent = '−'; minus.type = 'button';
+    minus.onclick = () => nudge(inp.id, -0.5);
+    const plus = document.createElement('button');
+    plus.className = 'nudge'; plus.textContent = '+'; plus.type = 'button';
+    plus.onclick = () => nudge(inp.id, 0.5);
+    inp.parentNode.insertBefore(minus, inp);
+    inp.parentNode.appendChild(plus);
+});
 </script>
 </body>
 </html>
