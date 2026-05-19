@@ -549,24 +549,25 @@ async function generate(){
     showProg(0,'Pocinjem...');
 
     if(s.onePerPage){
-        // Jedna karta po stranici: A4 landscape, karta popuni stranicu (rub 7mm), zadrzava proporcije
-        const mg=7, aw=297-2*mg, ah=210-2*mg;
-        const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+        // Jedna karta po stranici: stranica = velicina karte (puni format, BEZ praznog prostora) — isti princip kao dvostrana stampa
+        let doc=null, pageW=0, pageH=0;
         for(let i=0;i<total;i++){
             const t=tix[i]; if(!t)continue;
-            if(i>0) doc.addPage('a4','landscape');
             const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
             const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
             const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
-            const imgAsp=tc.width/tc.height, slotAsp=aw/ah;
-            let dw,dh,dx,dy;
-            if(imgAsp>slotAsp){dw=aw;dh=aw/imgAsp;dx=mg;dy=mg+(ah-dh)/2;}
-            else{dh=ah;dw=ah*imgAsp;dx=mg+(aw-dw)/2;dy=mg;}
-            doc.addImage(imgData,s.optimize?'JPEG':'PNG',dx,dy,dw,dh);
+            if(!doc){
+                const asp=tc.width/tc.height;
+                pageW=200; pageH=Math.round(pageW/asp*100)/100;
+                const orient=pageW>=pageH?'landscape':'portrait';
+                doc=new jsPDF({orientation:orient,unit:'mm',format:[pageW,pageH]});
+            } else {
+                doc.addPage([pageW,pageH], pageW>=pageH?'landscape':'portrait');
+            }
+            doc.addImage(imgData,s.optimize?'JPEG':'PNG',0,0,pageW,pageH);
             if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
         }
-        doc.save('tickets.pdf');
-        hideProg(); showMsg('PDF generisan! '+total+' karata, '+total+' stranica (jedna po stranici).','success');
+        hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+total+' stranica (jedna po stranici, '+pageW+'×'+pageH+'mm).','statusBox');
         document.getElementById('genBtn').disabled=false;
         return;
     }
@@ -588,11 +589,26 @@ async function generate(){
         doc.addImage(imgData,s.optimize?'JPEG':'PNG',dx,dy,dw,dh);
         if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
     }
-    doc.save('tickets.pdf');
-    hideProg(); showMsg('PDF generisan! '+total+' karata, '+Math.ceil(total/tpp)+' stranica.','success');
+    hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+Math.ceil(total/tpp)+' stranica.','statusBox');
     document.getElementById('genBtn').disabled=false;
 }
 function showMsg(m,t){const e=document.getElementById('statusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
+function offerPdf(doc, filename, msg, boxId){
+    let url=null;
+    try{ url=URL.createObjectURL(doc.output('blob')); }catch(err){ console.error('PDF blob greska:',err); }
+    if(url){ try{ const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }catch(err){} }
+    const e=document.getElementById(boxId);
+    e.className='status success'; e.innerHTML='';
+    const line=document.createElement('div'); line.textContent=msg; e.appendChild(line);
+    if(url){
+        const a=document.createElement('a'); a.href=url; a.download=filename; a.textContent='⬇ Preuzmi PDF';
+        a.style.cssText='display:inline-block;margin-top:10px;padding:10px 20px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px';
+        e.appendChild(a);
+    } else {
+        const w=document.createElement('div'); w.textContent='Ako se PDF ne preuzme automatski, pokusaj ponovo ili drugi browser.'; w.style.cssText='margin-top:8px;color:#f87171;font-size:12px'; e.appendChild(w);
+    }
+    e.classList.remove('hidden');
+}
 function showProg(p,t){document.getElementById('progBar').style.display='block';document.getElementById('progFill').style.width=p+'%';document.getElementById('progText').textContent=t||Math.round(p)+'%';}
 function hideProg(){document.getElementById('progBar').style.display='none';}
 
@@ -815,9 +831,8 @@ async function generateDouble() {
     }
 
     const pages = s.printOrder === 'interleaved' ? total * 2 : (backImg ? total * 2 : total);
-    doc.save('tickets-dvostrano.pdf');
     hideProgD();
-    showMsgD('PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)', 'success');
+    offerPdf(doc,'tickets-dvostrano.pdf','PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)','dStatusBox');
     genBtn.disabled = false;
 }
 
