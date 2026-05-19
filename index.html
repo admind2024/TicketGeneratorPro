@@ -202,7 +202,8 @@
                     <div class="section-header">
                         <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije</div>
                     </div>
-                    <div class="opt-row"><input type="checkbox" id="onePerPage" onchange="onOnePerPage()"><label for="onePerPage">Jedna karta po stranici (popuni A4)</label></div>
+                    <div class="opt-row"><input type="checkbox" id="onePerPage" onchange="onOnePerPage()"><label for="onePerPage">Jedna karta po stranici (velicina karte)</label></div>
+                    <div class="opt-row"><input type="checkbox" id="opCrop" checked><label for="opCrop">Oznake za rezanje (3mm prepust)</label></div>
                     <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
                     <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
                     <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
@@ -477,6 +478,7 @@ function S() {
         tid_x:N('tid_x'), tid_y:N('tid_y'), tid_fs:N('tid_fs'),
         perPage: parseInt(document.getElementById('perPage').value)||4,
         onePerPage: document.getElementById('onePerPage').checked,
+        crop: document.getElementById('opCrop').checked,
         optimize: document.getElementById('optimizePdf').checked,
         reorder: document.getElementById('reorderCut').checked,
         pagesPerDeck: parseInt(document.getElementById('pagesPerDeck').value)||100
@@ -503,6 +505,7 @@ document.getElementById('loadInput').onchange = async e => {
         ['qr_x','qr_y','qr_size','ord_x','ord_y','ord_fs','tid_x','tid_y','tid_fs'].forEach(k=>{if(s[k]!==undefined){document.getElementById(k).value=s[k];document.getElementById(k+'_v').textContent=s[k];}});
         if(s.perPage) document.getElementById('perPage').value=s.perPage;
         if(s.onePerPage!==undefined){ document.getElementById('onePerPage').checked=s.onePerPage; onOnePerPage(); }
+        if(s.crop!==undefined) document.getElementById('opCrop').checked=s.crop;
         if(s.optimize!==undefined) document.getElementById('optimizePdf').checked=s.optimize;
         if(s.reorder!==undefined) document.getElementById('reorderCut').checked=s.reorder;
         if(s.pagesPerDeck) document.getElementById('pagesPerDeck').value=s.pagesPerDeck;
@@ -565,9 +568,10 @@ async function generate(){
                 doc.addPage([pageW,pageH], pageW>=pageH?'landscape':'portrait');
             }
             doc.addImage(imgData,s.optimize?'JPEG':'PNG',0,0,pageW,pageH);
+            if(s.crop) addCropMarks(doc,pageW,pageH,3);
             if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
         }
-        hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+total+' stranica (jedna po stranici, '+pageW+'×'+pageH+'mm).','statusBox');
+        hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+total+' stranica. List '+pageW+'×'+pageH+'mm'+(s.crop?(', karta po rezu '+(pageW-6)+'×'+(Math.round((pageH-6)*10)/10)+'mm (sa oznakama za rezanje)'):'')+'.','statusBox');
         document.getElementById('genBtn').disabled=false;
         return;
     }
