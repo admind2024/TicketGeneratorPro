@@ -551,66 +551,103 @@ async function generate(){
     document.getElementById('genBtn').disabled=true;
     showProg(0,'Pocinjem...');
 
+    const imgQ = s.optimize ? 0.85 : 0.92;   // uvek JPEG (PNG je ~40x veci -> RangeError kod velikih batch-eva)
+
     if(s.onePerPage){
-        // Jedna karta po stranici: stranica = velicina karte (puni format, BEZ praznog prostora) — isti princip kao dvostrana stampa
-        let doc=null, pageW=0, pageH=0;
+        // Jedna karta po stranici: stranica = velicina karte + 3mm prepust (kao dvostrana stampa)
+        const asp=(tplImg.naturalWidth||tplImg.width)/(tplImg.naturalHeight||tplImg.height);
+        const pageW=200, pageH=Math.round(pageW/asp*100)/100;
+        const orient=pageW>=pageH?'landscape':'portrait';
+        const batch=makeBatcher('tickets', ()=> new jsPDF({orientation:orient,unit:'mm',format:[pageW,pageH],compress:true}));
         for(let i=0;i<total;i++){
             const t=tix[i]; if(!t)continue;
             const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
             const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
-            const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
-            if(!doc){
-                const asp=tc.width/tc.height;
-                pageW=200; pageH=Math.round(pageW/asp*100)/100;
-                const orient=pageW>=pageH?'landscape':'portrait';
-                doc=new jsPDF({orientation:orient,unit:'mm',format:[pageW,pageH]});
-            } else {
-                doc.addPage([pageW,pageH], pageW>=pageH?'landscape':'portrait');
-            }
-            doc.addImage(imgData,s.optimize?'JPEG':'PNG',0,0,pageW,pageH);
+            const imgData=tc.toDataURL('image/jpeg',imgQ);
+            const {doc,fresh}=batch.page(imgData.length);
+            if(!fresh) doc.addPage([pageW,pageH], orient);
+            doc.addImage(imgData,'JPEG',0,0,pageW,pageH);
             if(s.crop) addCropMarks(doc,pageW,pageH,3);
             if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
         }
-        hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+total+' stranica. List '+pageW+'×'+pageH+'mm'+(s.crop?(', karta po rezu '+(pageW-6)+'×'+(Math.round((pageH-6)*10)/10)+'mm (sa oznakama za rezanje)'):'')+'.','statusBox');
+        const files=batch.finish();
+        hideProg();
+        offerPdf(files,'PDF generisan! '+total+' karata, '+total+' stranica'+(files.length>1?(' u '+files.length+' fajla (zbog velicine)'):'')+'. List '+pageW+'×'+pageH+'mm'+(s.crop?(', karta po rezu '+(pageW-6)+'×'+(Math.round((pageH-6)*10)/10)+'mm (sa oznakama za rezanje)'):'')+'.','statusBox');
         document.getElementById('genBtn').disabled=false;
         return;
     }
 
-    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const pw=210,ph=297,mg=7,tpp=s.perPage;
-    const tw=pw-2*mg, th=(ph-(tpp+1)*mg)/tpp;
-    for(let i=0;i<total;i++){
-        const t=tix[i]; if(!t)continue;
-        const pos=i%tpp; if(pos===0&&i>0)doc.addPage();
-        const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
-        const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
-        const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
-        const yPos=mg+pos*(th+mg);
-        const imgAsp=tc.width/tc.height, slotAsp=tw/th;
-        let dw,dh,dx,dy;
-        if(imgAsp>slotAsp){dw=tw;dh=tw/imgAsp;dx=mg;dy=yPos+(th-dh)/2;}
-        else{dh=th;dw=th*imgAsp;dx=mg+(tw-dw)/2;dy=yPos;}
-        doc.addImage(imgData,s.optimize?'JPEG':'PNG',dx,dy,dw,dh);
-        if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
+    const mg=7, tpp=s.perPage;
+    const pw=210,ph=297, tw=pw-2*mg, th=(ph-(tpp+1)*mg)/tpp;
+    const pagesTotal=Math.ceil(total/tpp);
+    const batch=makeBatcher('tickets', ()=> new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true}));
+    let done=0;
+    for(let p=0;p<pagesTotal;p++){
+        const items=[];
+        for(let k=0;k<tpp;k++){
+            const idx=p*tpp+k; if(idx>=total) break;
+            const t=tix[idx]; if(!t) continue;
+            const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
+            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
+            items.push({ data:tc.toDataURL('image/jpeg',imgQ), asp:tc.width/tc.height, slot:k });
+        }
+        if(!items.length) continue;
+        const pageBytes=items.reduce((a,it)=>a+it.data.length,0);
+        const {doc,fresh}=batch.page(pageBytes);
+        if(!fresh) doc.addPage();
+        for(const it of items){
+            const yPos=mg+it.slot*(th+mg);
+            const imgAsp=it.asp, slotAsp=tw/th;
+            let dw,dh,dx,dy;
+            if(imgAsp>slotAsp){dw=tw;dh=tw/imgAsp;dx=mg;dy=yPos+(th-dh)/2;}
+            else{dh=th;dw=th*imgAsp;dx=mg+(tw-dw)/2;dy=yPos;}
+            doc.addImage(it.data,'JPEG',dx,dy,dw,dh);
+        }
+        done+=items.length;
+        showProg(done/total*100,done+'/'+total+' karata'); await new Promise(r=>setTimeout(r,0));
     }
-    hideProg(); offerPdf(doc,'tickets.pdf','PDF generisan! '+total+' karata, '+Math.ceil(total/tpp)+' stranica.','statusBox');
+    const files=batch.finish();
+    hideProg();
+    offerPdf(files,'PDF generisan! '+total+' karata, '+pagesTotal+' stranica'+(files.length>1?(' u '+files.length+' fajla (zbog velicine)'):'')+'.','statusBox');
     document.getElementById('genBtn').disabled=false;
 }
 function showMsg(m,t){const e=document.getElementById('statusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
-function offerPdf(doc, filename, msg, boxId){
-    let url=null;
-    try{ url=URL.createObjectURL(doc.output('blob')); }catch(err){ console.error('PDF blob greska:',err); }
-    if(url){ try{ const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }catch(err){} }
+function buildPdfBlob(doc){ try{ return doc.output('blob'); }catch(err){ console.error('PDF blob greska:',err); return null; } }
+function makeBatcher(baseName, newDocFn){
+    // Deli izlaz u vise PDF fajlova kad bi jedan presao limit JS stringa (~512MB) -> sprecava "Invalid string length"
+    const CAP=170*1024*1024;
+    let doc=null, est=0; const blobs=[];
+    return {
+        page(estBytes){
+            if(doc && est+estBytes>CAP){ blobs.push(buildPdfBlob(doc)); doc=null; }
+            let fresh=false;
+            if(!doc){ doc=newDocFn(); est=0; fresh=true; }
+            est+=estBytes;
+            return { doc, fresh };
+        },
+        finish(){
+            if(doc){ blobs.push(buildPdfBlob(doc)); doc=null; }
+            const multi=blobs.length>1;
+            return blobs.map((b,i)=>({ name: multi?(baseName+'-'+(i+1)+'.pdf'):(baseName+'.pdf'), blob:b }));
+        }
+    };
+}
+function offerPdf(files, msg, boxId){
     const e=document.getElementById(boxId);
-    e.className='status success'; e.innerHTML='';
+    e.innerHTML='';
     const line=document.createElement('div'); line.textContent=msg; e.appendChild(line);
-    if(url){
-        const a=document.createElement('a'); a.href=url; a.download=filename; a.textContent='⬇ Preuzmi PDF';
-        a.style.cssText='display:inline-block;margin-top:10px;padding:10px 20px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px';
+    let any=false;
+    files.forEach((f,idx)=>{
+        if(!f.blob) return;
+        any=true;
+        const url=URL.createObjectURL(f.blob);
+        if(idx===0){ try{ const a=document.createElement('a'); a.href=url; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); }catch(err){} }
+        const a=document.createElement('a'); a.href=url; a.download=f.name; a.textContent='⬇ '+f.name;
+        a.style.cssText='display:inline-block;margin:10px 8px 0 0;padding:10px 18px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px';
         e.appendChild(a);
-    } else {
-        const w=document.createElement('div'); w.textContent='Ako se PDF ne preuzme automatski, pokusaj ponovo ili drugi browser.'; w.style.cssText='margin-top:8px;color:#f87171;font-size:12px'; e.appendChild(w);
-    }
+    });
+    if(any){ e.className='status success'; }
+    else { e.className='status error'; const w=document.createElement('div'); w.textContent='Greska pri kreiranju PDF-a (previse podataka). Ukljuci "Optimizuj PDF" ili smanji broj karata po fajlu.'; w.style.cssText='margin-top:8px;font-size:12px'; e.appendChild(w); }
     e.classList.remove('hidden');
 }
 function showProg(p,t){document.getElementById('progBar').style.display='block';document.getElementById('progFill').style.width=p+'%';document.getElementById('progText').textContent=t||Math.round(p)+'%';}
@@ -777,7 +814,7 @@ async function generateDouble() {
     genBtn.disabled = true;
     showProgD(0, 'Pocinjem...');
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [BLEED_W, BLEED_H] });
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [BLEED_W, BLEED_H], compress: true });
     await ensureFont();
     const frontImg = await loadImg(frontDataURL);
     const backImg  = backDataURL ? await loadImg(backDataURL) : null;
@@ -836,7 +873,7 @@ async function generateDouble() {
 
     const pages = s.printOrder === 'interleaved' ? total * 2 : (backImg ? total * 2 : total);
     hideProgD();
-    offerPdf(doc,'tickets-dvostrano.pdf','PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)','dStatusBox');
+    offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],'PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)','dStatusBox');
     genBtn.disabled = false;
 }
 
