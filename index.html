@@ -85,13 +85,16 @@
         .nudge { background: #2a2d3a; border: 1px solid #374151; border-radius: 5px; color: #9ca3af; font-size: 14px; line-height: 1; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
         .nudge:hover { background: #374151; color: #e1e4ea; }
 
-        .collapsible { overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; max-height: 200px; opacity: 1; }
+        .collapsible { overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; max-height: 260px; opacity: 1; }
         .collapsible.collapsed { max-height: 0; opacity: 0; margin: 0; }
 
         .opt-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #9ca3af; }
         .opt-row input[type="number"] { width: 52px; padding: 4px 6px; background: #13151d; border: 1px solid #2a2d3a; border-radius: 6px; color: #e1e4ea; font-size: 12px; font-family: inherit; }
         .opt-row select { flex: 1; padding: 5px 8px; background: #13151d; border: 1px solid #2a2d3a; border-radius: 6px; color: #e1e4ea; font-size: 12px; font-family: inherit; cursor: pointer; }
         .opt-row input[type="checkbox"] { accent-color: #6366f1; }
+        .numstart { background: #1e2035; border: 1px solid #6366f1; border-radius: 9px; padding: 10px 12px; margin: 6px 0 12px; box-shadow: 0 0 12px rgba(99,102,241,0.18); }
+        .numstart label { font-size: 12px; font-weight: 700; color: #e1e4ea; text-transform: none; letter-spacing: 0; }
+        .numstart input { width: 96px; margin-left: auto; padding: 7px 9px; font-size: 15px; font-weight: 700; text-align: center; background: #13151d; border: 1px solid #6366f1; border-radius: 6px; color: #e1e4ea; font-family: inherit; }
 
         .btn { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; color: #fff; transition: all 0.2s; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -170,6 +173,7 @@
                     <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
                     <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
                     <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
+                    <div class="opt-row"><input type="checkbox" id="qrFrame" checked onchange="schedPreview()"><label for="qrFrame">Crni okvir (uglovi)</label></div>
                 </div>
                 <div class="settings-card">
                     <div class="section-header">
@@ -177,9 +181,10 @@
                         <label class="toggle"><input type="checkbox" id="showOrd" checked onchange="toggleSection()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="ordSettings">
+                        <div class="opt-row numstart"><label for="ordStart">Pocetni redni broj (npr. 003)</label><input type="text" inputmode="numeric" id="ordStart" value="1" oninput="schedPreview()"></div>
                         <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
                         <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="ord_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="36" id="ord_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -190,7 +195,7 @@
                     <div class="collapsible" id="tidSettings">
                         <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
                         <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="tid_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="24" id="tid_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -282,6 +287,7 @@
                     <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_qr_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_x_v">85</span></div></div>
                     <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="d_qr_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_y_v">50</span></div></div>
                     <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="d_qr_size" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_size_v">16</span></div></div>
+                    <div class="opt-row"><input type="checkbox" id="d_qrFrame" checked onchange="schedPreviewD()"><label for="d_qrFrame">Crni okvir (uglovi)</label></div>
                 </div>
                 <div class="settings-card">
                     <div class="section-header">
@@ -289,9 +295,10 @@
                         <label class="toggle"><input type="checkbox" id="dShowOrd" checked onchange="toggleSectionD()"><span class="track"></span></label>
                     </div>
                     <div class="collapsible" id="dOrdSettings">
+                        <div class="opt-row numstart"><label for="d_ordStart">Pocetni redni broj (npr. 003)</label><input type="text" inputmode="numeric" id="d_ordStart" value="1" oninput="schedPreviewD()"></div>
                         <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_ord_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_x_v">85</span></div></div>
                         <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="d_ord_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="36" id="d_ord_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="36" id="d_ord_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -302,7 +309,7 @@
                     <div class="collapsible" id="dTidSettings">
                         <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_tid_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_x_v">85</span></div></div>
                         <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="d_tid_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="72" value="24" id="d_tid_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
+                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="24" id="d_tid_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
                     </div>
                 </div>
                 <div class="settings-card">
@@ -366,6 +373,14 @@ function csvLine(line) {
     r.push(cur); return r;
 }
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
+let _fontReady=null;
+function ensureFont(){
+    if(_fontReady) return _fontReady;
+    _fontReady=(async()=>{ try{ if(document.fonts&&document.fonts.load){ await Promise.all(['400 16px Inter','600 16px Inter','700 16px Inter','bold 16px Inter'].map(f=>document.fonts.load(f))); await document.fonts.ready; } }catch(e){} })();
+    return _fontReady;
+}
+function ordCfg(id){ const raw=(document.getElementById(id).value||'').replace(/\D/g,''); const n=parseInt(raw,10); return { start: Number.isFinite(n)?n:1, pad: raw.length||1 }; }
+function fmtOrd(n,pad){ const s=String(n); return s.length>=pad ? s : '0'.repeat(pad-s.length)+s; }
 function qrURL(data,size){
     const qr=qrcode(0,'M'); qr.addData(data); qr.make();
     const mods=qr.getModuleCount();
@@ -388,10 +403,20 @@ async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
     ctx.fillStyle='#fff'; ctx.fillRect(qx-pad,qy-pad,qs+pad*2,qs+pad*2);
     const qimg=await loadImg(qrURL(qrData,qs));
     ctx.drawImage(qimg,qx,qy,qs,qs);
+    if(s.qrFrame){
+        const off=Math.round(qs*0.05);
+        const x0=qx-off, y0=qy-off, x1=qx+qs+off, y1=qy+qs+off;
+        const L=Math.round(qs*0.24), lw=Math.max(1,Math.round(qs*0.028));
+        ctx.strokeStyle='#000'; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.beginPath(); ctx.moveTo(x0,y0+L); ctx.lineTo(x0,y0); ctx.lineTo(x0+L,y0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x1-L,y0); ctx.lineTo(x1,y0); ctx.lineTo(x1,y0+L); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x0,y1-L); ctx.lineTo(x0,y1); ctx.lineTo(x0+L,y1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x1-L,y1); ctx.lineTo(x1,y1); ctx.lineTo(x1,y1-L); ctx.stroke();
+    }
     function txt(text,x,y,fontSize){
         const fs=Math.max(10,Math.round(fontSize*sc));
         ctx.font='bold '+fs+'px Inter,Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/5); ctx.strokeText(text,x,y);
+        ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/10); ctx.strokeText(text,x,y);
         ctx.fillStyle='black'; ctx.fillText(text,x,y);
     }
     if(s.showOrd && ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
@@ -441,9 +466,12 @@ function onOnePerPage(){
     pp.disabled=on; pp.style.opacity=on?0.4:1;
 }
 function S() {
+    const _o=ordCfg('ordStart');
     return {
         qr_x:N('qr_x'), qr_y:N('qr_y'), qr_size:N('qr_size'),
+        qrFrame: document.getElementById('qrFrame').checked,
         showOrd: document.getElementById('showOrd').checked,
+        ordStart: _o.start, ordPad: _o.pad,
         ord_x:N('ord_x'), ord_y:N('ord_y'), ord_fs:N('ord_fs'),
         showTid: document.getElementById('showTid').checked,
         tid_x:N('tid_x'), tid_y:N('tid_y'), tid_fs:N('tid_fs'),
@@ -478,6 +506,8 @@ document.getElementById('loadInput').onchange = async e => {
         if(s.optimize!==undefined) document.getElementById('optimizePdf').checked=s.optimize;
         if(s.reorder!==undefined) document.getElementById('reorderCut').checked=s.reorder;
         if(s.pagesPerDeck) document.getElementById('pagesPerDeck').value=s.pagesPerDeck;
+        if(s.ordStart!==undefined) document.getElementById('ordStart').value=fmtOrd(s.ordStart, s.ordPad||1);
+        if(s.qrFrame!==undefined) document.getElementById('qrFrame').checked=s.qrFrame;
         if(s.showOrd!==undefined) document.getElementById('showOrd').checked=s.showOrd;
         if(s.showTid!==undefined) document.getElementById('showTid').checked=s.showTid;
         toggleSection(); updatePreview();
@@ -488,8 +518,14 @@ async function updatePreview(){
     const box=document.getElementById('previewBox');
     if(!templateDataURL){box.innerHTML='<p>Ucitaj sliku za preview</p>';return;}
     try{
+        await ensureFont();
         const img=await loadImg(templateDataURL);
-        const c=await renderTicket(img,'SAMPLE-TICKET-ID','test123',1,S(),700);
+        const s=S();
+        const smp=tickets[0];
+        const tId=smp?smp.ticketId:'TICKET-ID';
+        const qd=smp?smp.qr_code:'test123';
+        const on=smp?fmtOrd(s.ordStart+smp.ordinal-1,s.ordPad):fmtOrd(s.ordStart,s.ordPad);
+        const c=await renderTicket(img,tId,qd,on,s,700);
         box.innerHTML=''; box.appendChild(c);
     } catch(e){ console.error('Preview error:',e); }
 }
@@ -506,6 +542,7 @@ async function generate(){
     if(!tickets.length||!templateDataURL)return;
     const s=S(), {jsPDF}=window.jspdf;
     let tix=[...tickets]; if(s.reorder && !s.onePerPage) tix=reorder(tix,s.pagesPerDeck);
+    await ensureFont();
     const tplImg=await loadImg(templateDataURL);
     const targetW=s.optimize?1400:null, total=tix.length;
     document.getElementById('genBtn').disabled=true;
@@ -518,7 +555,8 @@ async function generate(){
         for(let i=0;i<total;i++){
             const t=tix[i]; if(!t)continue;
             if(i>0) doc.addPage('a4','landscape');
-            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,t.ordinal,s,targetW);
+            const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
+            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
             const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
             const imgAsp=tc.width/tc.height, slotAsp=aw/ah;
             let dw,dh,dx,dy;
@@ -539,7 +577,8 @@ async function generate(){
     for(let i=0;i<total;i++){
         const t=tix[i]; if(!t)continue;
         const pos=i%tpp; if(pos===0&&i>0)doc.addPage();
-        const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,t.ordinal,s,targetW);
+        const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
+        const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
         const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
         const yPos=mg+pos*(th+mg);
         const imgAsp=tc.width/tc.height, slotAsp=tw/th;
@@ -573,7 +612,7 @@ async function handleCsvD(file) {
     try {
         tickets2 = parseCSV(await file.text());
         dCsvBox.classList.add('done'); dCsvBox.querySelector('p').textContent = file.name + ' (' + tickets2.length + ' karata)';
-        showMsgD('CSV ucitan: ' + tickets2.length + ' karata', 'success'); checkReadyD();
+        showMsgD('CSV ucitan: ' + tickets2.length + ' karata', 'success'); checkReadyD(); updatePreviewD();
     } catch(e) { showMsgD('Greska: '+e.message, 'error'); }
 }
 
@@ -614,9 +653,12 @@ function checkReadyD() {
 }
 
 function SD() {
+    const _o=ordCfg('d_ordStart');
     return {
         qr_x: ND('d_qr_x'), qr_y: ND('d_qr_y'), qr_size: ND('d_qr_size'),
+        qrFrame: document.getElementById('d_qrFrame').checked,
         showOrd: document.getElementById('dShowOrd').checked,
+        ordStart: _o.start, ordPad: _o.pad,
         ord_x: ND('d_ord_x'), ord_y: ND('d_ord_y'), ord_fs: ND('d_ord_fs'),
         showTid: document.getElementById('dShowTid').checked,
         tid_x: ND('d_tid_x'), tid_y: ND('d_tid_y'), tid_fs: ND('d_tid_fs'),
@@ -638,8 +680,14 @@ async function updatePreviewD() {
     const backBox  = document.getElementById('dPreviewBack');
     if (frontDataURL) {
         try {
+            await ensureFont();
             const img = await loadImg(frontDataURL);
-            const c = await renderTicket(img, 'SAMPLE-ID', 'test123', 1, SD(), 600);
+            const sd = SD();
+            const smp = tickets2[0];
+            const tId = smp ? smp.ticketId : 'TICKET-ID';
+            const qd = smp ? smp.qr_code : 'test123';
+            const on = smp ? fmtOrd(sd.ordStart + smp.ordinal - 1, sd.ordPad) : fmtOrd(sd.ordStart, sd.ordPad);
+            const c = await renderTicket(img, tId, qd, on, sd, 600);
             frontBox.innerHTML = '<div class="preview-side-label">Prednja strana</div>';
             frontBox.appendChild(c);
         } catch(e){ console.error(e); }
@@ -671,6 +719,8 @@ document.getElementById('dLoadInput').onchange = async e => {
                 document.getElementById(k+'_v').textContent=s[k.replace('d_','')];
             }
         });
+        if(s.ordStart!==undefined) document.getElementById('d_ordStart').value=fmtOrd(s.ordStart, s.ordPad||1);
+        if(s.qrFrame!==undefined) document.getElementById('d_qrFrame').checked=s.qrFrame;
         if(s.showOrd!==undefined) document.getElementById('dShowOrd').checked=s.showOrd;
         if(s.showTid!==undefined) document.getElementById('dShowTid').checked=s.showTid;
         if(s.printOrder) document.getElementById('dPrintOrder').value=s.printOrder;
@@ -708,6 +758,7 @@ async function generateDouble() {
     showProgD(0, 'Pocinjem...');
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [BLEED_W, BLEED_H] });
+    await ensureFont();
     const frontImg = await loadImg(frontDataURL);
     const backImg  = backDataURL ? await loadImg(backDataURL) : null;
 
@@ -722,7 +773,8 @@ async function generateDouble() {
         return c;
     }
     async function addFront(t) {
-        const c = await renderTicket(frontImg, t.ticketId, t.qr_code, t.ordinal, s, null);
+        const ordVal = t.ordinal!=null ? fmtOrd(s.ordStart + t.ordinal - 1, s.ordPad) : null;
+        const c = await renderTicket(frontImg, t.ticketId, t.qr_code, ordVal, s, null);
         doc.addImage(await canvasToJpeg(c), 'JPEG', 0, 0, BLEED_W, BLEED_H);
         if (s.cropMarks) addCropMarks(doc, BLEED_W, BLEED_H, 3);
     }
@@ -784,6 +836,7 @@ document.querySelectorAll('.sw input[type="range"]').forEach(inp => {
     inp.parentNode.insertBefore(minus, inp);
     inp.parentNode.appendChild(plus);
 });
+ensureFont();
 </script>
 </body>
 </html>
