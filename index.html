@@ -197,6 +197,7 @@
                     <div class="section-header">
                         <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije</div>
                     </div>
+                    <div class="opt-row"><input type="checkbox" id="onePerPage" onchange="onOnePerPage()"><label for="onePerPage">Jedna karta po stranici (popuni A4)</label></div>
                     <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
                     <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
                     <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
@@ -434,6 +435,11 @@ function handleImg(file) {
     reader.readAsDataURL(file);
 }
 function checkReady() { document.getElementById('genBtn').disabled = !(tickets.length && templateDataURL); }
+function onOnePerPage(){
+    const on=document.getElementById('onePerPage').checked;
+    const pp=document.getElementById('perPage');
+    pp.disabled=on; pp.style.opacity=on?0.4:1;
+}
 function S() {
     return {
         qr_x:N('qr_x'), qr_y:N('qr_y'), qr_size:N('qr_size'),
@@ -442,6 +448,7 @@ function S() {
         showTid: document.getElementById('showTid').checked,
         tid_x:N('tid_x'), tid_y:N('tid_y'), tid_fs:N('tid_fs'),
         perPage: parseInt(document.getElementById('perPage').value)||4,
+        onePerPage: document.getElementById('onePerPage').checked,
         optimize: document.getElementById('optimizePdf').checked,
         reorder: document.getElementById('reorderCut').checked,
         pagesPerDeck: parseInt(document.getElementById('pagesPerDeck').value)||100
@@ -467,6 +474,7 @@ document.getElementById('loadInput').onchange = async e => {
         const s=JSON.parse(await f.text());
         ['qr_x','qr_y','qr_size','ord_x','ord_y','ord_fs','tid_x','tid_y','tid_fs'].forEach(k=>{if(s[k]!==undefined){document.getElementById(k).value=s[k];document.getElementById(k+'_v').textContent=s[k];}});
         if(s.perPage) document.getElementById('perPage').value=s.perPage;
+        if(s.onePerPage!==undefined){ document.getElementById('onePerPage').checked=s.onePerPage; onOnePerPage(); }
         if(s.optimize!==undefined) document.getElementById('optimizePdf').checked=s.optimize;
         if(s.reorder!==undefined) document.getElementById('reorderCut').checked=s.reorder;
         if(s.pagesPerDeck) document.getElementById('pagesPerDeck').value=s.pagesPerDeck;
@@ -497,14 +505,37 @@ function reorder(tix,ppd){
 async function generate(){
     if(!tickets.length||!templateDataURL)return;
     const s=S(), {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const pw=210,ph=297,mg=7,tpp=s.perPage;
-    const tw=pw-2*mg, th=(ph-(tpp+1)*mg)/tpp;
-    let tix=[...tickets]; if(s.reorder) tix=reorder(tix,s.pagesPerDeck);
+    let tix=[...tickets]; if(s.reorder && !s.onePerPage) tix=reorder(tix,s.pagesPerDeck);
     const tplImg=await loadImg(templateDataURL);
     const targetW=s.optimize?1400:null, total=tix.length;
     document.getElementById('genBtn').disabled=true;
     showProg(0,'Pocinjem...');
+
+    if(s.onePerPage){
+        // Jedna karta po stranici: A4 landscape, karta popuni stranicu (rub 7mm), zadrzava proporcije
+        const mg=7, aw=297-2*mg, ah=210-2*mg;
+        const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+        for(let i=0;i<total;i++){
+            const t=tix[i]; if(!t)continue;
+            if(i>0) doc.addPage('a4','landscape');
+            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,t.ordinal,s,targetW);
+            const imgData=tc.toDataURL(s.optimize?'image/jpeg':'image/png',0.85);
+            const imgAsp=tc.width/tc.height, slotAsp=aw/ah;
+            let dw,dh,dx,dy;
+            if(imgAsp>slotAsp){dw=aw;dh=aw/imgAsp;dx=mg;dy=mg+(ah-dh)/2;}
+            else{dh=ah;dw=ah*imgAsp;dx=mg+(aw-dw)/2;dy=mg;}
+            doc.addImage(imgData,s.optimize?'JPEG':'PNG',dx,dy,dw,dh);
+            if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
+        }
+        doc.save('tickets.pdf');
+        hideProg(); showMsg('PDF generisan! '+total+' karata, '+total+' stranica (jedna po stranici).','success');
+        document.getElementById('genBtn').disabled=false;
+        return;
+    }
+
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pw=210,ph=297,mg=7,tpp=s.perPage;
+    const tw=pw-2*mg, th=(ph-(tpp+1)*mg)/tpp;
     for(let i=0;i<total;i++){
         const t=tix[i]; if(!t)continue;
         const pos=i%tpp; if(pos===0&&i>0)doc.addPage();
