@@ -633,6 +633,8 @@ function buildDefaultFields(parsed) {
         { id: 'pdv',           label: 'PDV',               text: 'PDV 15,00% URAČUNAT U CIJENU',                         left: 3,   top: 76,   fontSize: 5.5,  fontWeight: 400, color: '#000000' },
         { id: 'eventname',     label: 'Naziv eventa',      text: p.eventNameFull,                                        left: 35,  top: 67,   fontSize: 13,   fontWeight: 700, color: '#000000', width: 105, textAlign: 'center' },
         { id: 'qr',            label: 'QR Kod',            text: 'QR',                                                   left: 140, top: 4,    fontSize: 8,    fontWeight: 400, color: '#000000', isQr: true, qrSize: 30 },
+        { id: 'stub-sector-row', label: 'Stub: Sektor/Red',  text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 150, top: 36,   fontSize: 9,    fontWeight: 700, color: '#000000' },
+        { id: 'stub-seat-big',   label: 'Stub: Sjedište',    text: `SJEDIŠTE: ${p.sjediste}`,                              left: 150, top: 40,   fontSize: 10,   fontWeight: 700, color: '#000000' },
         { id: 'stub-home',     label: 'Stub: Domaći',      text: p.homeTeam,                                             left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
         { id: 'stub-away',     label: 'Stub: Gosti',       text: p.awayTeam,                                             left: 163, top: 52,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
         { id: 'stub-venue',    label: 'Stub: Stadion',     text: p.venue,                                                left: 163, top: 59,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
@@ -653,8 +655,10 @@ function fieldTextFromTicket(id, parsed) {
         case 'datetime':      return `${parsed.dateStr} | ${parsed.timeStr}`;
         case 'section':
         case 'stub-section':  return parsed.tribina;
-        case 'sector-row':    return `SEKTOR: ${parsed.sektor}  RED: ${parsed.red}`;
-        case 'seat':          return `SJEDIŠTE: ${parsed.sjediste}`;
+        case 'sector-row':
+        case 'stub-sector-row': return `SEKTOR: ${parsed.sektor}  RED: ${parsed.red}`;
+        case 'seat':
+        case 'stub-seat-big': return `SJEDIŠTE: ${parsed.sjediste}`;
         case 'ticketid':
         case 'stub-id':       return parsed.ticketId;
         case 'price':
