@@ -500,6 +500,12 @@
                     </div>
                     <div class="opt-row"><input type="checkbox" id="dCropMarks" checked><label for="dCropMarks">Oznake za rezanje</label></div>
                     <div class="opt-row"><input type="checkbox" id="dOptimize" checked><label for="dOptimize">Optimizuj PDF (manji fajl)</label></div>
+                    <div class="opt-row"><input type="checkbox" id="dReorderCut" onchange="onReorderCutToggleD()"><label for="dReorderCut">Numeracija za rezanje na nož (sekvencijalni špilovi)</label></div>
+                    <div class="opt-row" id="dPagesPerDeckRow" style="display:none">
+                        <label for="dPagesPerDeck">Stranica po špilu</label>
+                        <input type="number" id="dPagesPerDeck" value="100" min="1" max="1000" step="1" style="width:80px">
+                        <span style="font-size:10px;color:#6b7280">npr. 100 stranica × 4 karte = špil od 400 karata</span>
+                    </div>
                 </div>
                 <!-- Opseg za generisanje (za nastavak prekinute štampe) -->
                 <div class="settings-card">
@@ -1617,6 +1623,30 @@ function onPaperChangeD() {
     updateBleedInfoD();
     saveLocalD();
 }
+function onReorderCutToggleD() {
+    const on = document.getElementById('dReorderCut').checked;
+    document.getElementById('dPagesPerDeckRow').style.display = on ? '' : 'none';
+    saveLocalD();
+}
+// Reorder algoritam: redoslijed karata tako da nakon rezanja na nož svaka
+// pozicija (1..tpp) na stranici daje sekvencijalni špil.
+// Primjer: 400 karata, tpp=4, ppd=100 → špil 1 = karte 1-100, špil 2 = 101-200, itd.
+function reorderForCut(tix, ppd, tpp) {
+    const chunk = ppd * tpp;
+    const re = [];
+    for (let ci = 0; ci < Math.ceil(tix.length / chunk); ci++) {
+        const sl = tix.slice(ci * chunk, ci * chunk + chunk);
+        while (sl.length < chunk) sl.push(null);
+        // m[r][c] = karta na "redu" r (= pozicija špila) i "koloni" c (= stranica)
+        const m = [];
+        for (let r = 0; r < tpp; r++) m.push(sl.slice(r * ppd, (r + 1) * ppd));
+        // Iteriraj po stranicama (c), unutar svake po pozicijama (r)
+        for (let c = 0; c < ppd; c++)
+            for (let r = 0; r < tpp; r++)
+                if (c < m[r].length && m[r][c]) re.push(m[r][c]);
+    }
+    return re;
+}
 function onPaperPresetD(val) {
     if (!val) return;
     const [w, h] = val.split('x').map(Number);
@@ -1762,6 +1792,8 @@ function SD() {
         printOrder: document.getElementById('dPrintOrder').value,
         cropMarks: document.getElementById('dCropMarks').checked,
         optimize:  document.getElementById('dOptimize')?.checked ?? true,
+        reorderCut: document.getElementById('dReorderCut')?.checked ?? false,
+        pagesPerDeck: Math.max(1, parseInt(document.getElementById('dPagesPerDeck')?.value) || 100),
         perPage: Math.max(1, parseInt(document.getElementById('dPerPage').value) || 1),
         paperW:  Math.max(50, parseFloat(document.getElementById('dPaperW').value) || 210),
         paperH:  Math.max(50, parseFloat(document.getElementById('dPaperH').value) || 297),
@@ -1789,6 +1821,8 @@ function saveLocalD() {
             cardGap: num('dCardGap', 0),
             paperAuto: isPaperAutoD(),
             optimize: document.getElementById('dOptimize')?.checked ?? true,
+            reorderCut: document.getElementById('dReorderCut')?.checked ?? false,
+            pagesPerDeck: parseInt(document.getElementById('dPagesPerDeck')?.value) || 100,
         };
         localStorage.setItem(TAB2_STORAGE_KEY, JSON.stringify(data));
     } catch(e) { /* ignore */ }
@@ -1835,6 +1869,17 @@ function loadLocalD() {
         }
         if (typeof data.optimize === 'boolean') {
             const opt = document.getElementById('dOptimize'); if (opt) opt.checked = data.optimize;
+        }
+        if (typeof data.reorderCut === 'boolean') {
+            const rc = document.getElementById('dReorderCut');
+            if (rc) {
+                rc.checked = data.reorderCut;
+                const row = document.getElementById('dPagesPerDeckRow');
+                if (row) row.style.display = data.reorderCut ? '' : 'none';
+            }
+        }
+        if (typeof data.pagesPerDeck === 'number') {
+            const pd = document.getElementById('dPagesPerDeck'); if (pd) pd.value = data.pagesPerDeck;
         }
     } catch(e) { /* ignore */ }
 }
@@ -2078,8 +2123,12 @@ async function generateDouble() {
     const s = SD();
     const { jsPDF } = window.jspdf;
     // PRIMENI opseg (od reda – do reda). Ako nije postavljen, generiše sve.
-    const ticketsToGen = rangeFilteredTicketsD();
+    let ticketsToGen = rangeFilteredTicketsD();
     if (!ticketsToGen.length) { showMsgD('Opseg karata je prazan. Resetuj opseg ili učitaj CSV.', 'error'); return; }
+    // Reorder za rezanje na nož (samo kad perPage > 1 — inače nema smisla)
+    if (s.reorderCut && s.perPage > 1) {
+        ticketsToGen = reorderForCut(ticketsToGen, s.pagesPerDeck, s.perPage);
+    }
     const total = ticketsToGen.length;
     const rangeFrom = (parseInt(document.getElementById('dRangeFrom')?.value) || 1);
     const rangeTo   = (parseInt(document.getElementById('dRangeTo')?.value)   || tickets2.length);
