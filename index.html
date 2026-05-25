@@ -499,6 +499,7 @@
                         </select>
                     </div>
                     <div class="opt-row"><input type="checkbox" id="dCropMarks" checked><label for="dCropMarks">Oznake za rezanje</label></div>
+                    <div class="opt-row"><input type="checkbox" id="dOptimize" checked><label for="dOptimize">Optimizuj PDF (manji fajl)</label></div>
                 </div>
             </div>
         </div>
@@ -1712,6 +1713,7 @@ function SD() {
         qrFrame: document.getElementById('d_qrFrame').checked,
         printOrder: document.getElementById('dPrintOrder').value,
         cropMarks: document.getElementById('dCropMarks').checked,
+        optimize:  document.getElementById('dOptimize')?.checked ?? true,
         perPage: Math.max(1, parseInt(document.getElementById('dPerPage').value) || 1),
         paperW:  Math.max(50, parseFloat(document.getElementById('dPaperW').value) || 210),
         paperH:  Math.max(50, parseFloat(document.getElementById('dPaperH').value) || 297),
@@ -1738,6 +1740,7 @@ function saveLocalD() {
             paperH:  num('dPaperH', 297),
             cardGap: num('dCardGap', 0),
             paperAuto: isPaperAutoD(),
+            optimize: document.getElementById('dOptimize')?.checked ?? true,
         };
         localStorage.setItem(TAB2_STORAGE_KEY, JSON.stringify(data));
     } catch(e) { /* ignore */ }
@@ -1781,6 +1784,9 @@ function loadLocalD() {
                 document.getElementById('dPaperH').disabled = data.paperAuto;
                 document.getElementById('dPaperPreset').disabled = data.paperAuto;
             }
+        }
+        if (typeof data.optimize === 'boolean') {
+            const opt = document.getElementById('dOptimize'); if (opt) opt.checked = data.optimize;
         }
     } catch(e) { /* ignore */ }
 }
@@ -1985,9 +1991,12 @@ async function generateDouble() {
     await ensureFont();
     const frontImg = await loadImg(frontDataURL);
     const backImg  = backDataURL ? await loadImg(backDataURL) : null;
-    const renderOpts = { maxW: 4000, cardWidthMm: s.cardSize.w, cardHeightMm: s.cardSize.h, qrFrame: s.qrFrame };
+    // optimize=true → cap 1400px (manji fajl). false → max kvalitet 4000px.
+    const targetW = s.optimize ? 1400 : 4000;
+    const imgQ    = s.optimize ? 0.85 : 0.95;
+    const renderOpts = { maxW: targetW, cardWidthMm: s.cardSize.w, cardHeightMm: s.cardSize.h, qrFrame: s.qrFrame };
 
-    async function canvasToJpeg(canvas) { return canvas.toDataURL('image/jpeg', 0.95); }
+    function canvasToJpegSync(canvas) { return canvas.toDataURL('image/jpeg', imgQ); }
     function imgToCanvas(img) {
         const c = document.createElement('canvas');
         c.width  = img.naturalWidth  || img.width;
@@ -2006,14 +2015,14 @@ async function generateDouble() {
         const tw = pw;
         const th = (ph - (tpp-1)*gap) / tpp;
         const slotAsp = tw/th;
-        const backJpeg = backImg ? await canvasToJpeg(imgToCanvas(backImg)) : null;
+        const backJpeg = backImg ? canvasToJpegSync(imgToCanvas(backImg)) : null;
         const backAsp  = backImg ? (backImg.naturalWidth||backImg.width)/(backImg.naturalHeight||backImg.height) : null;
         const pagesTotal = Math.ceil(total/tpp);
 
         const orient = pw >= ph ? 'landscape' : 'portrait';
-        const doc = new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true });
+        const batch = makeBatcher('tickets-dvostrano', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true }));
 
-        function placeOnSlot(data, asp, slot) {
+        function placeOnSlot(doc, data, asp, slot) {
             const yPos = slot*(th + gap);
             let dw, dh, dx, dy;
             // Skaliraj sa očuvanjem aspect ratio-a; karte centrirane unutar slot-a
@@ -2021,39 +2030,45 @@ async function generateDouble() {
             else               { dh = th; dw = th*asp; dx = (tw - dw)/2;  dy = yPos; }
             doc.addImage(data, 'JPEG', dx, dy, dw, dh);
         }
-        async function addFrontPage(startIdx) {
-            let placed = 0;
+        async function renderFrontItems(startIdx) {
+            const items = [];
             for (let k = 0; k < tpp; k++) {
                 const idx = startIdx + k; if (idx >= total) break;
                 const tc = await renderTicketFscg(frontImg, tickets2[idx], s.fields, renderOpts);
-                placeOnSlot(await canvasToJpeg(tc), tc.width/tc.height, k);
-                placed++;
+                items.push({ data: canvasToJpegSync(tc), asp: tc.width/tc.height, slot: k });
             }
-            return placed;
+            return items;
+        }
+        const itemsBytes = (items) => items.reduce((a, it) => a + it.data.length, 0);
+        const backPageBytes = (n) => backJpeg ? backJpeg.length * n : 0;
+
+        function addFrontPage(items) {
+            const { doc, fresh } = batch.page(itemsBytes(items));
+            if (!fresh) doc.addPage([pw, ph], orient);
+            for (const it of items) placeOnSlot(doc, it.data, it.asp, it.slot);
         }
         function addBackPage(numCards) {
-            if (!backJpeg) return;
-            for (let k = 0; k < numCards; k++) placeOnSlot(backJpeg, backAsp, k);
+            const { doc, fresh } = batch.page(backPageBytes(numCards));
+            if (!fresh) doc.addPage([pw, ph], orient);
+            if (backJpeg) for (let k = 0; k < numCards; k++) placeOnSlot(doc, backJpeg, backAsp, k);
         }
 
         if (s.printOrder === 'interleaved') {
             for (let p = 0; p < pagesTotal; p++) {
-                if (p > 0) doc.addPage([pw, ph], orient);
-                const n = await addFrontPage(p*tpp);
-                doc.addPage([pw, ph], orient);
-                addBackPage(n);
+                const items = await renderFrontItems(p*tpp);
+                addFrontPage(items);
+                addBackPage(items.length);
                 showProgD((p+1)/pagesTotal*100, 'Stranica '+(p+1)+'/'+pagesTotal);
                 await new Promise(r => setTimeout(r, 0));
             }
         } else {
             for (let p = 0; p < pagesTotal; p++) {
-                if (p > 0) doc.addPage([pw, ph], orient);
-                await addFrontPage(p*tpp);
+                const items = await renderFrontItems(p*tpp);
+                addFrontPage(items);
                 showProgD((p+1)/(pagesTotal*2)*100, 'Prednje: '+(p+1)+'/'+pagesTotal);
                 await new Promise(r => setTimeout(r, 0));
             }
             for (let p = 0; p < pagesTotal; p++) {
-                doc.addPage([pw, ph], orient);
                 const n = Math.min(tpp, total - p*tpp);
                 addBackPage(n);
                 showProgD(50+(p+1)/(pagesTotal*2)*100, 'Zadnje: '+(p+1)+'/'+pagesTotal);
@@ -2061,10 +2076,11 @@ async function generateDouble() {
             }
         }
 
+        const files = batch.finish();
         const pages = backImg || s.printOrder === 'interleaved' ? pagesTotal * 2 : pagesTotal;
         hideProgD();
-        offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],
-            `PDF generisan! ${total} karata, ${pages} stranica ${pw}×${ph}mm (po ${tpp} karata).`,
+        offerPdf(files,
+            `PDF generisan! ${total} karata, ${pages} stranica ${pw}×${ph}mm (po ${tpp} karata)` + (files.length>1?` u ${files.length} fajla`:'') + '.',
             'dStatusBox');
         return;
     }
@@ -2075,16 +2091,23 @@ async function generateDouble() {
     const pageH = s.cardSize.h + 2*bl;
     const orient = pageW >= pageH ? 'landscape' : 'portrait';
 
-    const doc = new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true });
+    const batch = makeBatcher('tickets-dvostrano', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true }));
+    const backJpeg1 = backImg ? canvasToJpegSync(imgToCanvas(backImg)) : null;
 
     async function addFront(t) {
         const c = await renderTicketFscg(frontImg, t, s.fields, renderOpts);
-        doc.addImage(await canvasToJpeg(c), 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
+        const jpeg = canvasToJpegSync(c);
+        const { doc, fresh } = batch.page(jpeg.length);
+        if (!fresh) doc.addPage([pageW, pageH], orient);
+        doc.addImage(jpeg, 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
         if (s.cropMarks && bl > 0) addCropMarks(doc, pageW, pageH, bl);
     }
-    async function addBack() {
-        if (backImg) {
-            doc.addImage(await canvasToJpeg(imgToCanvas(backImg)), 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
+    function addBack() {
+        const est = backJpeg1 ? backJpeg1.length : 1024;
+        const { doc, fresh } = batch.page(est);
+        if (!fresh) doc.addPage([pageW, pageH], orient);
+        if (backJpeg1) {
+            doc.addImage(backJpeg1, 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
         } else {
             doc.setFillColor(255, 255, 255);
             doc.rect(bl, bl, s.cardSize.w, s.cardSize.h, 'F');
@@ -2094,32 +2117,29 @@ async function generateDouble() {
 
     if (s.printOrder === 'interleaved') {
         for (let i = 0; i < total; i++) {
-            if (i > 0) doc.addPage([pageW, pageH], orient);
             await addFront(tickets2[i]);
-            doc.addPage([pageW, pageH], orient);
-            await addBack();
+            addBack();
             showProgD((i+1)/total*100, (i+1)+'/'+total+' karata');
             await new Promise(r => setTimeout(r, 0));
         }
     } else {
         for (let i = 0; i < total; i++) {
-            if (i > 0) doc.addPage([pageW, pageH], orient);
             await addFront(tickets2[i]);
             showProgD((i+1)/(total*2)*100, 'Prednje: '+(i+1)+'/'+total);
             await new Promise(r => setTimeout(r, 0));
         }
         for (let i = 0; i < total; i++) {
-            doc.addPage([pageW, pageH], orient);
-            await addBack();
+            addBack();
             showProgD(50+(i+1)/(total*2)*100, 'Zadnje: '+(i+1)+'/'+total);
             await new Promise(r => setTimeout(r, 0));
         }
     }
 
+    const files = batch.finish();
     const pages = s.printOrder === 'interleaved' ? total * 2 : (backImg ? total * 2 : total);
     hideProgD();
-    offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],
-        'PDF generisan! ' + total + ' karata, ' + pages + ' stranica. List '+pageW+'×'+pageH+'mm (karta '+s.cardSize.w+'×'+s.cardSize.h+'mm + '+bl+'mm prepust).',
+    offerPdf(files,
+        'PDF generisan! ' + total + ' karata, ' + pages + ' stranica' + (files.length>1?` u ${files.length} fajla`:'') + '. List '+pageW+'×'+pageH+'mm (karta '+s.cardSize.w+'×'+s.cardSize.h+'mm + '+bl+'mm prepust).',
         'dStatusBox');
     } catch (err) {
         console.error('GenerateDouble error:', err);
