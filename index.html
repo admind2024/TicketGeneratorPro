@@ -501,6 +501,24 @@
                     <div class="opt-row"><input type="checkbox" id="dCropMarks" checked><label for="dCropMarks">Oznake za rezanje</label></div>
                     <div class="opt-row"><input type="checkbox" id="dOptimize" checked><label for="dOptimize">Optimizuj PDF (manji fajl)</label></div>
                 </div>
+                <!-- Opseg za generisanje (za nastavak prekinute štampe) -->
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#ef4444"></span> Opseg karata (za nastavak)</div>
+                    </div>
+                    <div id="dRangeInfo" style="font-size:11px;color:#9ca3af;margin-bottom:6px;line-height:1.4"></div>
+                    <div class="opt-row">
+                        <label for="dRangeFrom">Od reda</label>
+                        <input type="number" id="dRangeFrom" min="1" step="1" placeholder="1" style="width:80px" oninput="updateRangeInfoD()">
+                        <label for="dRangeTo" style="margin-left:6px">Do reda</label>
+                        <input type="number" id="dRangeTo" min="1" step="1" placeholder="kraj" style="width:80px" oninput="updateRangeInfoD()">
+                    </div>
+                    <div class="opt-row">
+                        <label for="dRangeTicketId" style="min-width:75px">Od TicketID</label>
+                        <input type="text" id="dRangeTicketId" placeholder="npr. TKT-FK26-04598" style="flex:1" oninput="onRangeTicketIdD()">
+                    </div>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="resetRangeD()">Resetuj opseg (sve karte)</button>
+                </div>
             </div>
         </div>
 
@@ -1443,6 +1461,10 @@ async function handleCsvD(file) {
         tickets2 = parseCSV(await file.text());
         dCsvBox.classList.add('done'); dCsvBox.querySelector('p').textContent = file.name + ' (' + tickets2.length + ' karata)';
         showMsgD('CSV ucitan: ' + tickets2.length + ' karata', 'success'); checkReadyD(); updatePreviewD();
+        updateRangeInfoD();
+        // Postavi default range na input placeholderima
+        const toEl = document.getElementById('dRangeTo');
+        if (toEl && !toEl.value) toEl.placeholder = String(tickets2.length);
     } catch(e) { showMsgD('Greska: '+e.message, 'error'); }
 }
 
@@ -2005,11 +2027,63 @@ function addCropMarks(doc, pageW, pageH, bleed) {
     });
 }
 
+// ── Opseg karata (za nastavak prekinute štampe) ─────────────────────────
+function getRangeD() {
+    const total = tickets2.length;
+    let from = parseInt(document.getElementById('dRangeFrom')?.value) || 1;
+    let to   = parseInt(document.getElementById('dRangeTo')?.value)   || total;
+    from = Math.max(1, Math.min(from, total || 1));
+    to   = Math.max(from, Math.min(to,   total || 1));
+    return { from, to, total };
+}
+function rangeFilteredTicketsD() {
+    if (!tickets2.length) return [];
+    const { from, to } = getRangeD();
+    return tickets2.slice(from - 1, to);
+}
+function updateRangeInfoD() {
+    const info = document.getElementById('dRangeInfo');
+    if (!info) return;
+    const total = tickets2.length;
+    if (!total) { info.textContent = 'Učitaj CSV prvo.'; return; }
+    const { from, to } = getRangeD();
+    const slice = rangeFilteredTicketsD();
+    const firstId = slice[0]?.ticketId || '?';
+    const lastId  = slice[slice.length-1]?.ticketId || '?';
+    info.innerHTML = `Generišem <strong>${slice.length}</strong> karata od ukupno ${total} (red ${from}–${to}).<br>` +
+                     `Prvi TicketID: <code>${firstId}</code> &nbsp; Zadnji: <code>${lastId}</code>`;
+}
+function onRangeTicketIdD() {
+    const v = (document.getElementById('dRangeTicketId').value || '').trim();
+    if (!v) return;
+    // Pronađi indeks (1-based) prve karte čiji ticketId odgovara (case-insensitive, supports partial match)
+    const lc = v.toLowerCase();
+    const idx = tickets2.findIndex(t => (t.ticketId || '').toLowerCase().includes(lc));
+    if (idx === -1) {
+        document.getElementById('dRangeInfo').innerHTML = `<span style="color:#f59e0b">⚠ TicketID "${v}" nije pronađen u CSV-u.</span>`;
+        return;
+    }
+    document.getElementById('dRangeFrom').value = idx + 1;
+    updateRangeInfoD();
+}
+function resetRangeD() {
+    document.getElementById('dRangeFrom').value = '';
+    document.getElementById('dRangeTo').value   = '';
+    document.getElementById('dRangeTicketId').value = '';
+    updateRangeInfoD();
+}
+
 async function generateDouble() {
     if (!tickets2.length || !frontDataURL) return;
     const s = SD();
     const { jsPDF } = window.jspdf;
-    const total = tickets2.length;
+    // PRIMENI opseg (od reda – do reda). Ako nije postavljen, generiše sve.
+    const ticketsToGen = rangeFilteredTicketsD();
+    if (!ticketsToGen.length) { showMsgD('Opseg karata je prazan. Resetuj opseg ili učitaj CSV.', 'error'); return; }
+    const total = ticketsToGen.length;
+    const rangeFrom = (parseInt(document.getElementById('dRangeFrom')?.value) || 1);
+    const rangeTo   = (parseInt(document.getElementById('dRangeTo')?.value)   || tickets2.length);
+    const rangeSuffix = (rangeFrom !== 1 || rangeTo !== tickets2.length) ? `-od${rangeFrom}-do${rangeTo}` : '';
     const genBtn = document.getElementById('dGenBtn');
     genBtn.disabled = true;
     showProgD(0, 'Pocinjem...');
@@ -2046,7 +2120,7 @@ async function generateDouble() {
         const pagesTotal = Math.ceil(total/tpp);
 
         const orient = pw >= ph ? 'landscape' : 'portrait';
-        const batch = makeBatcher('tickets-dvostrano', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true }));
+        const batch = makeBatcher('tickets-dvostrano' + rangeSuffix, () => new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true }));
 
         function placeOnSlot(doc, data, asp, slot) {
             const yPos = slot*(th + gap);
@@ -2060,7 +2134,7 @@ async function generateDouble() {
             const items = [];
             for (let k = 0; k < tpp; k++) {
                 const idx = startIdx + k; if (idx >= total) break;
-                const tc = await renderTicketFscg(frontImg, tickets2[idx], s.fields, renderOpts);
+                const tc = await renderTicketFscg(frontImg, ticketsToGen[idx], s.fields, renderOpts);
                 items.push({ data: canvasToJpegSync(tc), asp: tc.width/tc.height, slot: k });
             }
             return items;
@@ -2117,7 +2191,7 @@ async function generateDouble() {
     const pageH = s.cardSize.h + 2*bl;
     const orient = pageW >= pageH ? 'landscape' : 'portrait';
 
-    const batch = makeBatcher('tickets-dvostrano', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true }));
+    const batch = makeBatcher('tickets-dvostrano' + rangeSuffix, () => new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true }));
     const backJpeg1 = backImg ? canvasToJpegSync(imgToCanvas(backImg)) : null;
 
     async function addFront(t) {
@@ -2143,14 +2217,14 @@ async function generateDouble() {
 
     if (s.printOrder === 'interleaved') {
         for (let i = 0; i < total; i++) {
-            await addFront(tickets2[i]);
+            await addFront(ticketsToGen[i]);
             addBack();
             showProgD((i+1)/total*100, (i+1)+'/'+total+' karata');
             await new Promise(r => setTimeout(r, 0));
         }
     } else {
         for (let i = 0; i < total; i++) {
-            await addFront(tickets2[i]);
+            await addFront(ticketsToGen[i]);
             showProgD((i+1)/(total*2)*100, 'Prednje: '+(i+1)+'/'+total);
             await new Promise(r => setTimeout(r, 0));
         }
