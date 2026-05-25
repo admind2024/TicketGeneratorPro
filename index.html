@@ -635,7 +635,7 @@ function buildDefaultFields(parsed) {
         { id: 'qr',            label: 'QR Kod',            text: 'QR',                                                   left: 140, top: 4,    fontSize: 8,    fontWeight: 400, color: '#000000', isQr: true, qrSize: 30 },
         { id: 'stub-sector-row', label: 'Stub: Sektor/Red',  text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 150, top: 36,   fontSize: 9,    fontWeight: 700, color: '#000000' },
         { id: 'stub-seat-big',   label: 'Stub: Sjedište',    text: `SJEDIŠTE: ${p.sjediste}`,                              left: 150, top: 40,   fontSize: 10,   fontWeight: 700, color: '#000000' },
-        { id: 'stub-home',     label: 'Stub: Domaći',      text: p.homeTeam,                                             left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
+        { id: 'stub-home',     label: 'Stub: Naziv eventa', text: p.eventNameFull,                                       left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
         { id: 'stub-away',     label: 'Stub: Gosti',       text: p.awayTeam,                                             left: 163, top: 52,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
         { id: 'stub-venue',    label: 'Stub: Stadion',     text: p.venue,                                                left: 163, top: 59,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
         { id: 'stub-datetime', label: 'Stub: Datum',       text: `${p.dateStr}  ${p.timeStr}`,                           left: 163, top: 62.5, fontSize: 5.5,  fontWeight: 400, color: '#000000' },
@@ -666,8 +666,8 @@ function fieldTextFromTicket(id, parsed) {
         // PDV ima smisla samo ako postoji cijena — besplatna karta nema poreza
         case 'pdv':
         case 'stub-pdv':      return parsed.priceLabel ? 'PDV 15,00% URAČUNAT U CIJENU' : '';
-        case 'eventname':     return parsed.eventNameFull;
-        case 'stub-home':     return parsed.homeTeam;
+        case 'eventname':
+        case 'stub-home':     return parsed.eventNameFull;
         case 'stub-away':     return parsed.awayTeam;
         case 'stub-venue':    return parsed.venue;
         case 'stub-datetime': return `${parsed.dateStr}  ${parsed.timeStr}`;
