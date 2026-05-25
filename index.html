@@ -651,9 +651,12 @@ function buildDefaultFields(parsed) {
         { id: 'qr',            label: 'QR Kod',            text: 'QR',                                                   left: 140, top: 4,    fontSize: 8,    fontWeight: 400, color: '#000000', isQr: true, qrSize: 30 },
         { id: 'stub-sector-row', label: 'Stub: Sektor/Red',  text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 150, top: 36,   fontSize: 9,    fontWeight: 700, color: '#000000' },
         { id: 'stub-seat-big',   label: 'Stub: Sjedište',    text: `SJEDIŠTE: ${p.sjediste}`,                              left: 150, top: 40,   fontSize: 10,   fontWeight: 700, color: '#000000' },
-        { id: 'stub-home',     label: 'Stub: Naziv eventa', text: p.eventNameFull,                                       left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
-        { id: 'stub-event-prefix', label: 'Stub: Naziv (1. red)', text: p.eventPrefix,                                  left: 163, top: 44,   fontSize: 6.5,  fontWeight: 600, color: '#000000', width: 42, textAlign: 'left' },
-        { id: 'stub-event-teams',  label: 'Stub: Timovi (2. red)', text: p.eventTeams,                                  left: 163, top: 48,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
+        // stub-home: jedno polje koje prikazuje naziv eventa u 2 reda (prefiks + timovi razdvojeni \n)
+        // Ako nema prepoznatog sportskog prefiksa, prikazuje cijeli naziv u jednoj liniji.
+        { id: 'stub-home',     label: 'Stub: Naziv eventa', text: p.eventPrefix ? `${p.eventPrefix}\n${p.eventTeams}` : p.eventNameFull, left: 163, top: 45, fontSize: 7.5, fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
+        // Opcionalna alternativa: dva odvojena polja (sakriveno po defaultu — ako trebaš nezavisno pozicioniranje, unhide ih)
+        { id: 'stub-event-prefix', label: 'Stub: Naziv (1. red)', text: p.eventPrefix,                                  left: 163, top: 44,   fontSize: 6.5,  fontWeight: 600, color: '#000000', width: 42, textAlign: 'left', hidden: true },
+        { id: 'stub-event-teams',  label: 'Stub: Timovi (2. red)', text: p.eventTeams,                                  left: 163, top: 48,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left', hidden: true },
         { id: 'stub-away',     label: 'Stub: Gosti',       text: p.awayTeam,                                             left: 163, top: 52,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
         { id: 'stub-venue',    label: 'Stub: Stadion',     text: p.venue,                                                left: 163, top: 59,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
         { id: 'stub-datetime', label: 'Stub: Datum',       text: `${p.dateStr}  ${p.timeStr}`,                           left: 163, top: 62.5, fontSize: 5.5,  fontWeight: 400, color: '#000000' },
@@ -687,8 +690,10 @@ function fieldTextFromTicket(id, parsed) {
         // PDV ima smisla samo ako postoji cijena — besplatna karta nema poreza
         case 'pdv':
         case 'stub-pdv':      return parsed.priceLabel ? 'PDV 15,00% URAČUNAT U CIJENU' : '';
-        case 'eventname':
-        case 'stub-home':     return parsed.eventNameFull;
+        case 'eventname':     return parsed.eventNameFull;
+        case 'stub-home':     return parsed.eventPrefix
+                                  ? `${parsed.eventPrefix}\n${parsed.eventTeams}`
+                                  : parsed.eventNameFull;
         case 'stub-event-prefix': return parsed.eventPrefix;
         case 'stub-event-teams': return parsed.eventTeams;
         case 'stub-away':     return parsed.awayTeam;
@@ -804,16 +809,23 @@ async function renderTicketFscg(tplImg, ticket, fields, opts) {
         ctx.textBaseline = 'top';
         ctx.textAlign = f.textAlign === 'center' ? 'center' : 'left';
 
-        if (f.width) {
-            const maxLineW = f.width * pxPerMmX;
-            const lines = wrapText(ctx, text, maxLineW);
-            const lineH = fontPx;
-            const drawX = f.textAlign === 'center' ? x + maxLineW / 2 : x;
-            lines.forEach((line, idx) => {
-                ctx.fillText(line, drawX, y + idx * lineH);
-            });
-        } else {
-            ctx.fillText(text, x, y);
+        // Podrška za \n (eksplicitni line break) + opcionalni word-wrap unutar width-a
+        const segments = text.split('\n');
+        const lineH = fontPx;
+        let yOff = 0;
+        for (const seg of segments) {
+            if (f.width) {
+                const maxLineW = f.width * pxPerMmX;
+                const wrapped = wrapText(ctx, seg, maxLineW);
+                const drawX = f.textAlign === 'center' ? x + maxLineW / 2 : x;
+                for (const line of wrapped) {
+                    ctx.fillText(line, drawX, y + yOff);
+                    yOff += lineH;
+                }
+            } else {
+                ctx.fillText(seg, x, y + yOff);
+                yOff += lineH;
+            }
         }
     }
 
@@ -1139,7 +1151,8 @@ async function updatePreview() {
             const family = f.fontFamily || tab1GlobalFont;
             const d = document.createElement('div');
             d.dataset.id = f.id;
-            const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:normal` : 'white-space:nowrap';
+            // pre-line cuva \n kao line break (i u width=auto i sa wrap-om)
+            const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:pre-line` : 'white-space:pre-line';
             const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
             d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
             d.textContent = text;
@@ -1661,7 +1674,8 @@ async function updatePreviewD() {
                 const family = f.fontFamily || tab2GlobalFont;
                 const d = document.createElement('div');
                 d.dataset.id = f.id;
-                const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:normal` : 'white-space:nowrap';
+                // pre-line cuva \n kao line break (i u width=auto i sa wrap-om)
+            const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:pre-line` : 'white-space:pre-line';
                 const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
                 d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
                 d.textContent = text;
