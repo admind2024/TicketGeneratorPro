@@ -596,6 +596,7 @@ function parseTicket(t) {
         priceLabel: formatPrice(t.price, t.Valuta),
         ticketId: t.ticketId || '',
         qrCodeRaw: t.qr_code || t.qrCodeRaw || t.ticketId || '',
+        entrance: (t.entrance || '').toString().toUpperCase(),
     };
 }
 function csvLine(line) {
@@ -628,6 +629,7 @@ function buildDefaultFields(parsed) {
         { id: 'section',       label: 'Tribina',           text: p.tribina,                                              left: 3,   top: 56.5, fontSize: 8,    fontWeight: 600, color: '#000000' },
         { id: 'sector-row',    label: 'Sektor / Red',      text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 3,   top: 60.5, fontSize: 9,    fontWeight: 700, color: '#000000' },
         { id: 'seat',          label: 'Sjedište',          text: `SJEDIŠTE: ${p.sjediste}`,                              left: 3,   top: 65,   fontSize: 10,   fontWeight: 700, color: '#000000' },
+        { id: 'entrance',      label: 'Ulaz',              text: p.entrance ? `ULAZ: ${p.entrance}` : '',                left: 60,  top: 60.5, fontSize: 9,    fontWeight: 700, color: '#000000' },
         { id: 'ticketid',      label: 'Broj karte',        text: p.ticketId,                                             left: 3,   top: 69.5, fontSize: 6,    fontWeight: 400, color: '#000000' },
         { id: 'price',         label: 'Cijena',            text: p.priceLabel ? `Cijena ulaznice - ${p.priceLabel}` : '', left: 3,  top: 72.5, fontSize: 6.5,  fontWeight: 400, color: '#000000' },
         { id: 'pdv',           label: 'PDV',               text: 'PDV 15,00% URAČUNAT U CIJENU',                         left: 3,   top: 76,   fontSize: 5.5,  fontWeight: 400, color: '#000000' },
@@ -641,6 +643,7 @@ function buildDefaultFields(parsed) {
         { id: 'stub-datetime', label: 'Stub: Datum',       text: `${p.dateStr}  ${p.timeStr}`,                           left: 163, top: 62.5, fontSize: 5.5,  fontWeight: 400, color: '#000000' },
         { id: 'stub-section',  label: 'Stub: Tribina',     text: p.tribina,                                              left: 163, top: 66,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
         { id: 'stub-seatinfo', label: 'Stub: Sjed.',       text: `SEKTOR: ${p.sektor} RED: ${p.red}  SJEDIŠTE: ${p.sjediste}`, left: 163, top: 69.5, fontSize: 5.5, fontWeight: 400, color: '#000000' },
+        { id: 'stub-entrance', label: 'Stub: Ulaz',        text: p.entrance ? `ULAZ: ${p.entrance}` : '',                left: 163, top: 72,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
         { id: 'stub-id',       label: 'Stub: Br.karte',    text: p.ticketId,                                             left: 163, top: 73,   fontSize: 5,    fontWeight: 400, color: '#000000' },
         { id: 'stub-price',    label: 'Stub: Cijena',      text: p.priceLabel ? `Cijena ulaznice - ${p.priceLabel}` : '', left: 163, top: 76,   fontSize: 5,   fontWeight: 400, color: '#000000' },
         { id: 'stub-pdv',      label: 'Stub: PDV',         text: 'PDV 15,00% URAČUNAT U CIJENU',                         left: 163, top: 79,   fontSize: 4.5,  fontWeight: 400, color: '#000000' },
@@ -659,6 +662,8 @@ function fieldTextFromTicket(id, parsed) {
         case 'stub-sector-row': return `SEKTOR: ${parsed.sektor}  RED: ${parsed.red}`;
         case 'seat':
         case 'stub-seat-big': return `SJEDIŠTE: ${parsed.sjediste}`;
+        case 'entrance':
+        case 'stub-entrance': return parsed.entrance ? `ULAZ: ${parsed.entrance}` : '';
         case 'ticketid':
         case 'stub-id':       return parsed.ticketId;
         case 'price':
