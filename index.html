@@ -1041,6 +1041,14 @@ function S() {
 
 function schedPreview(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview, 150); }
 // ── localStorage persistencija ──────────────────────────────────────────
+// Spaja sačuvana polja sa default-ima: čuva user pozicije/style, ali appenda
+// default polja koja u sačuvanom layoutu fale (npr. naknadno dodato 'entrance').
+function mergeFieldsWithDefaults(loadedFields) {
+    const defaults = buildDefaultFields(parseTicket({}));
+    const loadedIds = new Set(loadedFields.map(f => f.id));
+    const missing = defaults.filter(d => !loadedIds.has(d.id));
+    return loadedFields.concat(missing);
+}
 function saveLocal() {
     try {
         const data = { fields: tab1Fields, cardSize: tab1CardSize, globalFont: tab1GlobalFont };
@@ -1052,7 +1060,7 @@ function loadLocal() {
         const raw = localStorage.getItem(TAB1_STORAGE_KEY);
         if (!raw) return;
         const data = JSON.parse(raw);
-        if (Array.isArray(data.fields)) tab1Fields = data.fields;
+        if (Array.isArray(data.fields)) tab1Fields = mergeFieldsWithDefaults(data.fields);
         if (data.cardSize && data.cardSize.w && data.cardSize.h) {
             tab1CardSize = data.cardSize;
             const cw = document.getElementById('cardW'); if (cw) cw.value = data.cardSize.w;
@@ -1078,7 +1086,7 @@ document.getElementById('loadInput').onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
     try {
         const data = JSON.parse(await f.text());
-        if (Array.isArray(data.fields)) tab1Fields = data.fields;
+        if (Array.isArray(data.fields)) tab1Fields = mergeFieldsWithDefaults(data.fields);
         if (data.cardSize && data.cardSize.w && data.cardSize.h) {
             tab1CardSize = data.cardSize;
             document.getElementById('cardW').value = data.cardSize.w;
