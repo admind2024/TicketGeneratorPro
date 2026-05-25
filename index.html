@@ -161,49 +161,117 @@
                     </div>
                 </div>
                 <div class="preview-box" id="previewBox">
-                    <p>Ucitaj CSV i sliku za preview</p>
+                    <p>Ucitaj sliku za preview</p>
                 </div>
             </div>
 
             <div class="settings-panel">
+                <!-- Dimenzije karte -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod</div>
+                        <div class="section-title"><span class="dot" style="background:#4a90d9"></span> Dimenzije karte (mm)</div>
                     </div>
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="qr_x" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="qr_y" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_y_v">50</span></div></div>
-                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="qr_size" step="0.5" oninput="onSlider(this)"><span class="val" id="qr_size_v">16</span></div></div>
-                    <div class="opt-row"><input type="checkbox" id="qrFrame" checked onchange="schedPreview()"><label for="qrFrame">Crni okvir (uglovi)</label></div>
+                    <div class="opt-row">
+                        <label for="cardW">Širina</label>
+                        <input type="number" id="cardW" value="205" min="10" max="297" step="0.5" oninput="onCardSizeChange()">
+                        <label for="cardH" style="margin-left:8px">Visina</label>
+                        <input type="number" id="cardH" value="82" min="10" max="297" step="0.5" oninput="onCardSizeChange()">
+                    </div>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="autoSizeFromImage()">Auto iz slike (aspect ratio)</button>
                 </div>
+                <!-- Globalni font -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Redni broj</div>
-                        <label class="toggle"><input type="checkbox" id="showOrd" checked onchange="toggleSection()"><span class="track"></span></label>
+                        <div class="section-title"><span class="dot" style="background:#a855f7"></span> Globalni font</div>
                     </div>
-                    <div class="collapsible" id="ordSettings">
-                        <div class="opt-row numstart"><label for="ordStart">Pocetni redni broj (npr. 003)</label><input type="text" inputmode="numeric" id="ordStart" value="1" oninput="schedPreview()"></div>
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="ord_x" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="ord_y" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="36" id="ord_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="ord_fs_v">36</span></div></div>
+                    <div class="opt-row">
+                        <select id="globalFont" onchange="onGlobalFontChange()" style="flex:1">
+                            <option value="'Arial Black', 'Arial Bold', Gadget, sans-serif">Arial Black</option>
+                            <option value="'Oswald', 'Arial Narrow', Arial, sans-serif">Oswald</option>
+                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                            <option value="'Impact', 'Arial Black', sans-serif">Impact</option>
+                            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                            <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        </select>
+                    </div>
+                    <div class="opt-row"><input type="checkbox" id="qrFrame" checked onchange="schedPreview()"><label for="qrFrame">QR okvir (uglovi)</label></div>
+                </div>
+                <!-- Lista polja -->
+                <div class="settings-card">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#22c55e"></span> Polja na karti</div>
+                    </div>
+                    <div id="fieldList" style="display:flex;flex-direction:column;gap:1px;max-height:280px;overflow-y:auto"></div>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:11px;padding:6px" onclick="addCustomField()">+ Dodaj custom tekst</button>
+                </div>
+                <!-- Detalji izabranog polja -->
+                <div class="settings-card" id="fieldDetailCard" style="display:none">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#ff0"></span> <span id="fieldDetailLabel">Polje</span></div>
+                        <button class="btn btn-secondary" id="deleteFieldBtn" style="font-size:10px;padding:3px 8px;display:none" onclick="deleteSelectedField()">Obriši</button>
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:30px">X</label>
+                        <input type="number" id="f_left" step="0.5" oninput="onFieldDetailChange('left', this.value)" style="width:70px">
+                        <label style="margin-left:6px;min-width:30px">Y</label>
+                        <input type="number" id="f_top" step="0.5" oninput="onFieldDetailChange('top', this.value)" style="width:70px">
+                        <span style="font-size:10px;color:#6b7280;margin-left:4px">mm</span>
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:30px">Font</label>
+                        <input type="number" id="f_fs" step="0.5" min="2" oninput="onFieldDetailChange('fontSize', this.value)" style="width:60px">
+                        <span style="font-size:10px;color:#6b7280">pt</span>
+                        <label style="margin-left:6px;min-width:42px">Weight</label>
+                        <select id="f_fw" onchange="onFieldDetailChange('fontWeight', parseInt(this.value))" style="flex:1">
+                            <option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option><option value="900">900</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="f_qrSize_row" style="display:none">
+                        <label style="min-width:60px">QR size</label>
+                        <input type="number" id="f_qrSize" step="1" min="5" oninput="onFieldDetailChange('qrSize', this.value)" style="width:60px">
+                        <span style="font-size:10px;color:#6b7280">mm</span>
+                    </div>
+                    <div class="opt-row" id="f_align_row">
+                        <label style="min-width:60px">Align</label>
+                        <select id="f_align" onchange="onFieldDetailChange('textAlign', this.value)" style="flex:1">
+                            <option value="left">Lijevo</option>
+                            <option value="center">Centar</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="f_width_row">
+                        <label style="min-width:60px">Width</label>
+                        <input type="number" id="f_width" step="1" placeholder="auto" oninput="onFieldDetailChange('width', this.value)" style="width:80px">
+                        <span style="font-size:10px;color:#6b7280">mm (wrap)</span>
+                    </div>
+                    <div class="opt-row" id="f_font_row">
+                        <label style="min-width:60px">Font</label>
+                        <select id="f_font" onchange="onFieldDetailChange('fontFamily', this.value)" style="flex:1">
+                            <option value="">— globalni —</option>
+                            <option value="'Arial Black', 'Arial Bold', Gadget, sans-serif">Arial Black</option>
+                            <option value="'Oswald', 'Arial Narrow', Arial, sans-serif">Oswald</option>
+                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                            <option value="'Impact', 'Arial Black', sans-serif">Impact</option>
+                            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                            <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="f_text_row">
+                        <label style="min-width:60px">Tekst</label>
+                        <input type="text" id="f_text" oninput="onFieldDetailChange('text', this.value)" style="flex:1">
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:60px">Boja</label>
+                        <input type="color" id="f_color" oninput="onFieldDetailChange('color', this.value)" style="width:40px;height:28px;border:none;background:transparent;cursor:pointer">
                     </div>
                 </div>
+                <!-- Opcije štampe -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#3b82f6"></span> Ticket ID</div>
-                        <label class="toggle"><input type="checkbox" id="showTid" checked onchange="toggleSection()"><span class="track"></span></label>
+                        <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije štampe</div>
                     </div>
-                    <div class="collapsible" id="tidSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="tid_x" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="tid_y" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="24" id="tid_fs" step="0.5" oninput="onSlider(this)"><span class="val" id="tid_fs_v">24</span></div></div>
-                    </div>
-                </div>
-                <div class="settings-card">
-                    <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije</div>
-                    </div>
-                    <div class="opt-row"><input type="checkbox" id="onePerPage" onchange="onOnePerPage()"><label for="onePerPage">Jedna karta po stranici (velicina karte)</label></div>
-                    <div class="opt-row"><input type="checkbox" id="opCrop" checked><label for="opCrop">Oznake za rezanje (3mm prepust)</label></div>
+                    <div class="opt-row"><input type="checkbox" id="onePerPage" onchange="onOnePerPage()"><label for="onePerPage">Jedna karta po stranici</label></div>
+                    <div class="opt-row"><input type="checkbox" id="opCrop" checked><label for="opCrop">Oznake za rezanje</label></div>
+                    <div class="opt-row"><label for="bleed">Prepust (mm)</label><input type="number" id="bleed" value="3" min="0" max="10" step="0.5"></div>
                     <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
                     <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
                     <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
@@ -232,11 +300,11 @@
         <div class="main-layout">
             <div class="left-col">
 
-                <div class="bleed-info">
-                    <strong>Dimenzije sa prepustom:</strong> 200 × 97 mm (20 × 9.7 cm) &nbsp;|&nbsp;
-                    <strong>Trim (karta):</strong> 194 × 91 mm &nbsp;|&nbsp;
+                <div class="bleed-info" id="dBleedInfo">
+                    <strong>Karta:</strong> 205×82 mm &nbsp;|&nbsp;
                     <strong>Prepust:</strong> 3mm sa svih strana &nbsp;|&nbsp;
-                    Jedna karta po stranici PDF-a
+                    <strong>Stranica PDF-a:</strong> 211×88 mm &nbsp;|&nbsp;
+                    Jedna karta po stranici
                 </div>
 
                 <div class="uploads-row-3">
@@ -253,7 +321,7 @@
                         <label class="upload-box" id="dFrontBox" for="dFrontInput">
                             <div class="icon">&#127795;</div>
                             <p>Prednja strana</p>
-                            <small>200×97mm (20×9.7cm)</small>
+                            <small id="dFrontSmall">Slika prednje karte</small>
                         </label>
                         <input type="file" id="dFrontInput" accept="image/*" class="hidden">
                     </div>
@@ -262,7 +330,7 @@
                         <label class="upload-box" id="dBackBox" for="dBackInput">
                             <div class="icon">&#127796;</div>
                             <p>Zadnja strana</p>
-                            <small>200×97mm (20×9.7cm)</small>
+                            <small id="dBackSmall">Slika zadnje karte</small>
                         </label>
                         <input type="file" id="dBackInput" accept="image/*" class="hidden">
                     </div>
@@ -270,7 +338,7 @@
 
                 <div class="preview-dual">
                     <div class="preview-side" id="dPreviewFront">
-                        <div class="preview-side-label">Prednja strana</div>
+                        <div class="preview-side-label">Prednja strana (drag polja)</div>
                         <p>Ucitaj prednju stranu</p>
                     </div>
                     <div class="preview-side" id="dPreviewBack">
@@ -281,38 +349,109 @@
             </div>
 
             <div class="settings-panel">
+                <!-- Dimenzije karte + prepust -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#6366f1"></span> QR Kod (prednja)</div>
+                        <div class="section-title"><span class="dot" style="background:#4a90d9"></span> Dimenzije karte (mm)</div>
                     </div>
-                    <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_qr_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_x_v">85</span></div></div>
-                    <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="50" id="d_qr_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_y_v">50</span></div></div>
-                    <div class="slider-row"><label>Velicina %</label><div class="sw"><input type="range" min="5" max="50" value="16" id="d_qr_size" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_qr_size_v">16</span></div></div>
-                    <div class="opt-row"><input type="checkbox" id="d_qrFrame" checked onchange="schedPreviewD()"><label for="d_qrFrame">Crni okvir (uglovi)</label></div>
+                    <div class="opt-row">
+                        <label for="dCardW">Širina</label>
+                        <input type="number" id="dCardW" value="205" min="10" max="297" step="0.5" oninput="onCardSizeChangeD()">
+                        <label for="dCardH" style="margin-left:8px">Visina</label>
+                        <input type="number" id="dCardH" value="82" min="10" max="297" step="0.5" oninput="onCardSizeChangeD()">
+                    </div>
+                    <div class="opt-row">
+                        <label for="dBleed">Prepust (mm)</label>
+                        <input type="number" id="dBleed" value="3" min="0" max="10" step="0.5" oninput="onBleedChangeD()">
+                    </div>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="autoSizeFromImageD()">Auto iz slike (aspect ratio)</button>
                 </div>
+                <!-- Globalni font -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Redni broj</div>
-                        <label class="toggle"><input type="checkbox" id="dShowOrd" checked onchange="toggleSectionD()"><span class="track"></span></label>
+                        <div class="section-title"><span class="dot" style="background:#a855f7"></span> Globalni font</div>
                     </div>
-                    <div class="collapsible" id="dOrdSettings">
-                        <div class="opt-row numstart"><label for="d_ordStart">Pocetni redni broj (npr. 003)</label><input type="text" inputmode="numeric" id="d_ordStart" value="1" oninput="schedPreviewD()"></div>
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_ord_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="30" id="d_ord_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_y_v">30</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="36" id="d_ord_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_ord_fs_v">36</span></div></div>
+                    <div class="opt-row">
+                        <select id="dGlobalFont" onchange="onGlobalFontChangeD()" style="flex:1">
+                            <option value="'Arial Black', 'Arial Bold', Gadget, sans-serif">Arial Black</option>
+                            <option value="'Oswald', 'Arial Narrow', Arial, sans-serif">Oswald</option>
+                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                            <option value="'Impact', 'Arial Black', sans-serif">Impact</option>
+                            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                            <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        </select>
                     </div>
+                    <div class="opt-row"><input type="checkbox" id="d_qrFrame" checked onchange="schedPreviewD()"><label for="d_qrFrame">QR okvir (uglovi)</label></div>
                 </div>
+                <!-- Lista polja -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#3b82f6"></span> Ticket ID</div>
-                        <label class="toggle"><input type="checkbox" id="dShowTid" checked onchange="toggleSectionD()"><span class="track"></span></label>
+                        <div class="section-title"><span class="dot" style="background:#22c55e"></span> Polja (prednja)</div>
                     </div>
-                    <div class="collapsible" id="dTidSettings">
-                        <div class="slider-row"><label>X pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="85" id="d_tid_x" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_x_v">85</span></div></div>
-                        <div class="slider-row"><label>Y pozicija %</label><div class="sw"><input type="range" min="0" max="100" value="72" id="d_tid_y" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_y_v">72</span></div></div>
-                        <div class="slider-row"><label>Font</label><div class="sw"><input type="range" min="10" max="300" value="24" id="d_tid_fs" step="0.5" oninput="onSliderD(this)"><span class="val" id="d_tid_fs_v">24</span></div></div>
+                    <div id="dFieldList" style="display:flex;flex-direction:column;gap:1px;max-height:280px;overflow-y:auto"></div>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:11px;padding:6px" onclick="addCustomFieldD()">+ Dodaj custom tekst</button>
+                </div>
+                <!-- Detalji izabranog polja -->
+                <div class="settings-card" id="dFieldDetailCard" style="display:none">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot" style="background:#ff0"></span> <span id="dFieldDetailLabel">Polje</span></div>
+                        <button class="btn btn-secondary" id="dDeleteFieldBtn" style="font-size:10px;padding:3px 8px;display:none" onclick="deleteSelectedFieldD()">Obriši</button>
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:30px">X</label>
+                        <input type="number" id="df_left" step="0.5" oninput="onFieldDetailChangeD('left', this.value)" style="width:70px">
+                        <label style="margin-left:6px;min-width:30px">Y</label>
+                        <input type="number" id="df_top" step="0.5" oninput="onFieldDetailChangeD('top', this.value)" style="width:70px">
+                        <span style="font-size:10px;color:#6b7280;margin-left:4px">mm</span>
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:30px">Font</label>
+                        <input type="number" id="df_fs" step="0.5" min="2" oninput="onFieldDetailChangeD('fontSize', this.value)" style="width:60px">
+                        <span style="font-size:10px;color:#6b7280">pt</span>
+                        <label style="margin-left:6px;min-width:42px">Weight</label>
+                        <select id="df_fw" onchange="onFieldDetailChangeD('fontWeight', parseInt(this.value))" style="flex:1">
+                            <option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option><option value="900">900</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="df_qrSize_row" style="display:none">
+                        <label style="min-width:60px">QR size</label>
+                        <input type="number" id="df_qrSize" step="1" min="5" oninput="onFieldDetailChangeD('qrSize', this.value)" style="width:60px">
+                        <span style="font-size:10px;color:#6b7280">mm</span>
+                    </div>
+                    <div class="opt-row" id="df_align_row">
+                        <label style="min-width:60px">Align</label>
+                        <select id="df_align" onchange="onFieldDetailChangeD('textAlign', this.value)" style="flex:1">
+                            <option value="left">Lijevo</option>
+                            <option value="center">Centar</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="df_width_row">
+                        <label style="min-width:60px">Width</label>
+                        <input type="number" id="df_width" step="1" placeholder="auto" oninput="onFieldDetailChangeD('width', this.value)" style="width:80px">
+                        <span style="font-size:10px;color:#6b7280">mm (wrap)</span>
+                    </div>
+                    <div class="opt-row" id="df_font_row">
+                        <label style="min-width:60px">Font</label>
+                        <select id="df_font" onchange="onFieldDetailChangeD('fontFamily', this.value)" style="flex:1">
+                            <option value="">— globalni —</option>
+                            <option value="'Arial Black', 'Arial Bold', Gadget, sans-serif">Arial Black</option>
+                            <option value="'Oswald', 'Arial Narrow', Arial, sans-serif">Oswald</option>
+                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                            <option value="'Impact', 'Arial Black', sans-serif">Impact</option>
+                            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                            <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="df_text_row">
+                        <label style="min-width:60px">Tekst</label>
+                        <input type="text" id="df_text" oninput="onFieldDetailChangeD('text', this.value)" style="flex:1">
+                    </div>
+                    <div class="opt-row">
+                        <label style="min-width:60px">Boja</label>
+                        <input type="color" id="df_color" oninput="onFieldDetailChangeD('color', this.value)" style="width:40px;height:28px;border:none;background:transparent;cursor:pointer">
                     </div>
                 </div>
+                <!-- Opcije štampe -->
                 <div class="settings-card">
                     <div class="section-header">
                         <div class="section-title"><span class="dot" style="background:#9ca3af"></span> Opcije štampe</div>
@@ -355,6 +494,17 @@ function parseCSV(text) {
     const ti = find('ticketId','ticket_id','ticketid');
     const qi = find('qrCodeRaw','qrcoderaw','QR Code','qr_code','qrcode','QRCode');
     if (ti===-1 || qi===-1) throw new Error('Nedostaju kolone: ticketId i/ili QR Code\nPronadjene: '+headers.join(', '));
+    // Opcione kolone (FSCG model): ako fale, polje će biti prazan string i polje se preskoči pri renderu
+    const eni  = find('eventName','event_name','eventname');
+    const edi  = find('eventDate','event_date','eventdate','datum');
+    const eti  = find('eventTime','event_time','eventtime','vrijeme');
+    const loki = find('Lokacija','lokacija','venue');
+    const sei  = find('seatId','seat_id','seatid');
+    const cati = find('category','kategorija');
+    const sli  = find('sectionLabel','section_label','sectionlabel','tribina');
+    const pri  = find('price','cijena');
+    const vai  = find('Valuta','valuta','currency');
+    const cni  = find('customerName','customer_name','customername','ime');
     const result = [];
     for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
@@ -364,15 +514,158 @@ function parseCSV(text) {
         if (!ticketId || !qr) continue;
         if (qr.startsWith('http')) { try { const d = new URL(qr).searchParams.get('data'); if (d) qr = decodeURIComponent(d); } catch(e){} }
         else { try { qr = decodeURIComponent(qr); } catch(e){} }
-        result.push({ ticketId, qr_code: qr, ordinal: result.length + 1 });
+        const get = (i) => i>=0 ? (c[i]||'').trim() : '';
+        result.push({
+            ticketId, qr_code: qr, ordinal: result.length + 1,
+            eventName:    get(eni),
+            eventDate:    get(edi),
+            eventTime:    get(eti),
+            Lokacija:     get(loki),
+            seatId:       get(sei),
+            category:     get(cati),
+            sectionLabel: get(sli),
+            price:        get(pri),
+            Valuta:       get(vai),
+            customerName: get(cni),
+        });
     }
     return result;
+}
+
+// ===== FSCG PARSE HELPERS =====
+// seatId format: "prefix-...-Red-Sjediste" (zadnja dva segmenta = red, sjedište)
+function splitSeatId(seatId) {
+    if (!seatId) return { red: '', sjediste: '' };
+    const s = String(seatId);
+    const d2 = s.lastIndexOf('-');
+    const d1 = s.lastIndexOf('-', d2 - 1);
+    if (d1 === -1 || d2 === -1) return { red: '', sjediste: '' };
+    return {
+        red:      s.substring(d1 + 1, d2),
+        sjediste: s.substring(d2 + 1),
+    };
+}
+// sectionLabel "TRIBINA ZAPAD SEKTOR C" → { tribina: "TRIBINA ZAPAD", sektor: "C" }
+function parseSectionLabel(label, fallbackCategory) {
+    const full = (label || '').toString().toUpperCase();
+    const m = full.match(/SEKTOR\s+(\S+)/);
+    const sektor  = m ? m[1] : (fallbackCategory || '').toString().toUpperCase();
+    const tribina = full.replace(/\s*SEKTOR\s+.*$/, '').trim() || full;
+    return { tribina, sektor };
+}
+// "2026-03-27" → "27.03.2026"; ako nije ISO, vrati kako jest
+function formatDate(raw) {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[3]}.${m[2]}.${m[1]}` : raw;
+}
+// 25 / "25" / "25.00" + valuta → "25,00€"
+function formatPrice(value, valuta) {
+    const n = Number(value || 0);
+    if (!n) return '';
+    const cur = valuta === 'EUR' ? '€' : (valuta || '€');
+    return `${n.toFixed(2).replace('.', ',')}${cur}`;
+}
+// "Crna Gora vs Andora" / "Crna Gora - Andora" → { home: "CRNA GORA", away: "ANDORA" }
+function splitEventName(name) {
+    const en = (name || '').toString().toUpperCase().replace(/ VS\.? /i, ' - ');
+    const parts = en.split(/ - /);
+    return { home: (parts[0] || '').trim(), away: (parts[1] || '').trim(), full: en };
+}
+// Parsira jedan CSV red u sve izvedene vrijednosti (kao FSCG buildFields)
+function parseTicket(t) {
+    const { red, sjediste } = splitSeatId(t.seatId);
+    const { tribina, sektor } = parseSectionLabel(t.sectionLabel, t.category);
+    const { home, away, full: eventFull } = splitEventName(t.eventName);
+    return {
+        eventNameFull: eventFull,
+        homeTeam: home,
+        awayTeam: away,
+        venue:    (t.Lokacija || '').toString().toUpperCase(),
+        dateStr:  formatDate(t.eventDate || ''),
+        timeStr:  (t.eventTime || '').toString(),
+        tribina,
+        sektor,
+        red:      red || 'N/A',
+        sjediste: sjediste || 'N/A',
+        priceLabel: formatPrice(t.price, t.Valuta),
+        ticketId: t.ticketId || '',
+    };
 }
 function csvLine(line) {
     const r=[]; let cur='', inQ=false;
     for (let i=0;i<line.length;i++) { const ch=line[i]; if(inQ){if(ch==='"'){if(i+1<line.length&&line[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=ch;}else{if(ch==='"')inQ=true;else if(ch===','){r.push(cur);cur='';}else cur+=ch;} }
     r.push(cur); return r;
 }
+// ===== FSCG FIELD MODEL =====
+// Dimenzije karte (mm) — koriste se za mm↔px konverziju pri renderu.
+// Default: 205×82 mm (kao FSCG). Promijene se automatski iz aspect-ratio uploadovane slike.
+const DEFAULT_CARD_WIDTH_MM  = 205;
+const DEFAULT_CARD_HEIGHT_MM = 82;
+
+const FONT_OPTIONS_FSCG = [
+    { value: "'Arial Black', 'Arial Bold', Gadget, sans-serif", label: "Arial Black" },
+    { value: "'Oswald', 'Arial Narrow', Arial, sans-serif",     label: "Oswald" },
+    { value: "Arial, Helvetica, sans-serif",                    label: "Arial" },
+    { value: "'Impact', 'Arial Black', sans-serif",             label: "Impact" },
+    { value: "'Trebuchet MS', sans-serif",                      label: "Trebuchet MS" },
+    { value: "'Inter', system-ui, sans-serif",                  label: "Inter" },
+];
+const DEFAULT_FONT_FSCG = FONT_OPTIONS_FSCG[0].value;
+
+// Default layout polja — kopiran iz FSCG editora (left/top u mm, fontSize u pt)
+function buildDefaultFields(parsed) {
+    const p = parsed || parseTicket({});
+    return [
+        { id: 'venue',         label: 'Lokacija',          text: p.venue,                                                left: 3,   top: 46,   fontSize: 9,    fontWeight: 700, color: '#000000' },
+        { id: 'datetime',      label: 'Datum | Vrijeme',   text: `${p.dateStr} | ${p.timeStr}`,                          left: 3,   top: 52,   fontSize: 7.5,  fontWeight: 400, color: '#000000' },
+        { id: 'section',       label: 'Tribina',           text: p.tribina,                                              left: 3,   top: 56.5, fontSize: 8,    fontWeight: 600, color: '#000000' },
+        { id: 'sector-row',    label: 'Sektor / Red',      text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 3,   top: 60.5, fontSize: 9,    fontWeight: 700, color: '#000000' },
+        { id: 'seat',          label: 'Sjedište',          text: `SJEDIŠTE: ${p.sjediste}`,                              left: 3,   top: 65,   fontSize: 10,   fontWeight: 700, color: '#000000' },
+        { id: 'ticketid',      label: 'Broj karte',        text: p.ticketId,                                             left: 3,   top: 69.5, fontSize: 6,    fontWeight: 400, color: '#000000' },
+        { id: 'price',         label: 'Cijena',            text: p.priceLabel ? `Cijena ulaznice - ${p.priceLabel}` : '', left: 3,  top: 72.5, fontSize: 6.5,  fontWeight: 400, color: '#000000' },
+        { id: 'pdv',           label: 'PDV',               text: 'PDV 15,00% URAČUNAT U CIJENU',                         left: 3,   top: 76,   fontSize: 5.5,  fontWeight: 400, color: '#000000' },
+        { id: 'eventname',     label: 'Naziv eventa',      text: p.eventNameFull,                                        left: 35,  top: 67,   fontSize: 13,   fontWeight: 700, color: '#000000', width: 105, textAlign: 'center' },
+        { id: 'qr',            label: 'QR Kod',            text: 'QR',                                                   left: 140, top: 4,    fontSize: 8,    fontWeight: 400, color: '#000000', isQr: true, qrSize: 30 },
+        { id: 'stub-home',     label: 'Stub: Domaći',      text: p.homeTeam,                                             left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
+        { id: 'stub-away',     label: 'Stub: Gosti',       text: p.awayTeam,                                             left: 163, top: 52,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
+        { id: 'stub-venue',    label: 'Stub: Stadion',     text: p.venue,                                                left: 163, top: 59,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
+        { id: 'stub-datetime', label: 'Stub: Datum',       text: `${p.dateStr}  ${p.timeStr}`,                           left: 163, top: 62.5, fontSize: 5.5,  fontWeight: 400, color: '#000000' },
+        { id: 'stub-section',  label: 'Stub: Tribina',     text: p.tribina,                                              left: 163, top: 66,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
+        { id: 'stub-seatinfo', label: 'Stub: Sjed.',       text: `SEKTOR: ${p.sektor} RED: ${p.red}  SJEDIŠTE: ${p.sjediste}`, left: 163, top: 69.5, fontSize: 5.5, fontWeight: 400, color: '#000000' },
+        { id: 'stub-id',       label: 'Stub: Br.karte',    text: p.ticketId,                                             left: 163, top: 73,   fontSize: 5,    fontWeight: 400, color: '#000000' },
+        { id: 'stub-price',    label: 'Stub: Cijena',      text: p.priceLabel ? `Cijena ulaznice - ${p.priceLabel}` : '', left: 163, top: 76,   fontSize: 5,   fontWeight: 400, color: '#000000' },
+        { id: 'stub-pdv',      label: 'Stub: PDV',         text: 'PDV 15,00% URAČUNAT U CIJENU',                         left: 163, top: 79,   fontSize: 4.5,  fontWeight: 400, color: '#000000' },
+    ];
+}
+
+// Mapira id polja → text iz parsiranog ticketa. Koristi se pri update text-a kad
+// se promijeni CSV (layout iz template-a, text iz baze — kao FSCG).
+function fieldTextFromTicket(id, parsed) {
+    switch (id) {
+        case 'venue':         return parsed.venue;
+        case 'datetime':      return `${parsed.dateStr} | ${parsed.timeStr}`;
+        case 'section':
+        case 'stub-section':  return parsed.tribina;
+        case 'sector-row':    return `SEKTOR: ${parsed.sektor}  RED: ${parsed.red}`;
+        case 'seat':          return `SJEDIŠTE: ${parsed.sjediste}`;
+        case 'ticketid':
+        case 'stub-id':       return parsed.ticketId;
+        case 'price':
+        case 'stub-price':    return parsed.priceLabel ? `Cijena ulaznice - ${parsed.priceLabel}` : '';
+        // PDV ima smisla samo ako postoji cijena — besplatna karta nema poreza
+        case 'pdv':
+        case 'stub-pdv':      return parsed.priceLabel ? 'PDV 15,00% URAČUNAT U CIJENU' : '';
+        case 'eventname':     return parsed.eventNameFull;
+        case 'stub-home':     return parsed.homeTeam;
+        case 'stub-away':     return parsed.awayTeam;
+        case 'stub-venue':    return parsed.venue;
+        case 'stub-datetime': return `${parsed.dateStr}  ${parsed.timeStr}`;
+        case 'stub-seatinfo': return `SEKTOR: ${parsed.sektor} RED: ${parsed.red}  SJEDIŠTE: ${parsed.sjediste}`;
+        default:              return null; // custom polja zadržavaju svoj text
+    }
+}
+
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
 let _fontReady=null;
 function ensureFont(){
@@ -380,8 +673,6 @@ function ensureFont(){
     _fontReady=(async()=>{ try{ if(document.fonts&&document.fonts.load){ await Promise.all(['400 16px Inter','600 16px Inter','700 16px Inter','bold 16px Inter'].map(f=>document.fonts.load(f))); await document.fonts.ready; } }catch(e){} })();
     return _fontReady;
 }
-function ordCfg(id){ const raw=(document.getElementById(id).value||'').replace(/\D/g,''); const n=parseInt(raw,10); return { start: Number.isFinite(n)?n:1, pad: raw.length||1 }; }
-function fmtOrd(n,pad){ const s=String(n); return s.length>=pad ? s : '0'.repeat(pad-s.length)+s; }
 function qrURL(data,size){
     const qr=qrcode(0,'M'); qr.addData(data); qr.make();
     const mods=qr.getModuleCount();
@@ -391,39 +682,111 @@ function qrURL(data,size){
     for(let r=0;r<mods;r++) for(let col=0;col<mods;col++) if(qr.isDark(r,col)) ctx.fillRect(col*cs,r*cs,cs,cs);
     return c.toDataURL();
 }
-async function renderTicket(tplImg, ticketId, qrData, ordinal, s, maxW) {
-    const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
-    let w=tplImg.naturalWidth||tplImg.width, h=tplImg.naturalHeight||tplImg.height, sc=1;
-    if(maxW&&maxW<w){sc=maxW/w;w=maxW;h=Math.round(h*sc);}
-    canvas.width=w; canvas.height=h;
-    ctx.drawImage(tplImg,0,0,w,h);
-    const qs=Math.round(w*s.qr_size/100);
-    const qx=Math.max(0,Math.round(w*s.qr_x/100-qs/2));
-    const qy=Math.max(0,Math.round(h*s.qr_y/100-qs/2));
-    const pad=Math.round(qs*0.08);
-    ctx.fillStyle='#fff'; ctx.fillRect(qx-pad,qy-pad,qs+pad*2,qs+pad*2);
-    const qimg=await loadImg(qrURL(qrData,qs));
-    ctx.drawImage(qimg,qx,qy,qs,qs);
-    if(s.qrFrame){
-        const off=Math.round(qs*0.05);
-        const x0=qx-off, y0=qy-off, x1=qx+qs+off, y1=qy+qs+off;
-        const L=Math.round(qs*0.24), lw=Math.max(1,Math.round(qs*0.028));
-        ctx.strokeStyle='#000'; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
-        ctx.beginPath(); ctx.moveTo(x0,y0+L); ctx.lineTo(x0,y0); ctx.lineTo(x0+L,y0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x1-L,y0); ctx.lineTo(x1,y0); ctx.lineTo(x1,y0+L); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x0,y1-L); ctx.lineTo(x0,y1); ctx.lineTo(x0+L,y1); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x1-L,y1); ctx.lineTo(x1,y1); ctx.lineTo(x1,y1-L); ctx.stroke();
+// ===== FSCG WORD WRAP =====
+function wrapText(ctx, text, maxWidth) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+        const trial = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(trial).width > maxWidth && cur) {
+            lines.push(cur);
+            cur = w;
+        } else {
+            cur = trial;
+        }
     }
-    function txt(text,x,y,fontSize){
-        const fs=Math.max(10,Math.round(fontSize*sc));
-        ctx.font='bold '+fs+'px Inter,Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.strokeStyle='white'; ctx.lineWidth=Math.max(2,fs/10); ctx.strokeText(text,x,y);
-        ctx.fillStyle='black'; ctx.fillText(text,x,y);
+    if (cur) lines.push(cur);
+    return lines;
+}
+
+// ===== FSCG RENDER =====
+// Crta sva polja iz `fields` niza na canvas. mm pozicije se konvertuju u px
+// preko cardWidthMm/cardHeightMm. fontSize je u pt → 1pt ≈ 0.3528mm.
+async function renderTicketFscg(tplImg, ticket, fields, opts) {
+    const {
+        maxW = null,
+        cardWidthMm  = DEFAULT_CARD_WIDTH_MM,
+        cardHeightMm = DEFAULT_CARD_HEIGHT_MM,
+        qrFrame = true,
+    } = opts || {};
+
+    let w = tplImg.naturalWidth || tplImg.width;
+    let h = tplImg.naturalHeight || tplImg.height;
+    if (maxW && maxW < w) {
+        h = Math.round(h * maxW / w);
+        w = maxW;
     }
-    if(s.showOrd && ordinal!=null) txt(String(ordinal),Math.round(w*s.ord_x/100),Math.round(h*s.ord_y/100),s.ord_fs);
-    if(s.showTid) txt(ticketId,Math.round(w*s.tid_x/100),Math.round(h*s.tid_y/100),s.tid_fs);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(tplImg, 0, 0, w, h);
+
+    const pxPerMmX = w / cardWidthMm;
+    const pxPerMmY = h / cardHeightMm;
+    const ptToPx = (pt) => Math.max(1, Math.round(pt * 0.3528 * pxPerMmX));
+
+    const parsed = parseTicket(ticket || {});
+
+    for (const f of fields) {
+        if (f.hidden) continue;
+
+        const x = Math.round(f.left * pxPerMmX);
+        const y = Math.round(f.top  * pxPerMmY);
+
+        if (f.isQr) {
+            const qs = Math.round((f.qrSize || 30) * pxPerMmX);
+            const pad = Math.round(qs * 0.08);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x - pad, y - pad, qs + pad * 2, qs + pad * 2);
+            const qrData = ticket?.qr_code || ticket?.qrCodeRaw || ticket?.ticketId || '';
+            if (qrData) {
+                const qimg = await loadImg(qrURL(qrData, qs));
+                ctx.drawImage(qimg, x, y, qs, qs);
+            }
+            if (qrFrame) {
+                const off = Math.round(qs * 0.05);
+                const x0 = x - off, y0 = y - off, x1 = x + qs + off, y1 = y + qs + off;
+                const L = Math.round(qs * 0.24), lw = Math.max(1, Math.round(qs * 0.028));
+                ctx.strokeStyle = '#000'; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.beginPath(); ctx.moveTo(x0, y0 + L); ctx.lineTo(x0, y0); ctx.lineTo(x0 + L, y0); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x1 - L, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + L); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x0, y1 - L); ctx.lineTo(x0, y1); ctx.lineTo(x0 + L, y1); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x1 - L, y1); ctx.lineTo(x1, y1); ctx.lineTo(x1, y1 - L); ctx.stroke();
+            }
+            continue;
+        }
+
+        // Tekstualno polje: ako postoji mapper za ovaj id, koristi fresh tekst iz ticketa;
+        // inače padaj na f.text (custom polja, statika kao "PDV ...").
+        const mapped = fieldTextFromTicket(f.id, parsed);
+        const text = (mapped !== null && mapped !== undefined ? mapped : (f.text || '')).toString();
+        if (!text) continue;
+
+        const fontPx = ptToPx(f.fontSize);
+        const family = f.fontFamily || DEFAULT_FONT_FSCG;
+        ctx.font = `${f.fontWeight || 400} ${fontPx}px ${family}`;
+        ctx.fillStyle = f.color || '#000';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = f.textAlign === 'center' ? 'center' : 'left';
+
+        if (f.width) {
+            const maxLineW = f.width * pxPerMmX;
+            const lines = wrapText(ctx, text, maxLineW);
+            const lineH = fontPx;
+            const drawX = f.textAlign === 'center' ? x + maxLineW / 2 : x;
+            lines.forEach((line, idx) => {
+                ctx.fillText(line, drawX, y + idx * lineH);
+            });
+        } else {
+            ctx.fillText(text, x, y);
+        }
+    }
+
     return canvas;
 }
+
 
 // ===== TAB SWITCHING =====
 function switchTab(n) {
@@ -433,9 +796,20 @@ function switchTab(n) {
     document.querySelectorAll('.tab-btn')[n-1].classList.add('active');
 }
 
-// ===== TAB 1 =====
-let tickets = [], templateDataURL = null, debounceTimer = null;
+// ===== TAB 1 (FSCG MODEL) =====
+const TAB1_STORAGE_KEY = 'tgp-fscg-template-v1';
 
+let tickets = [], templateDataURL = null, debounceTimer = null;
+let tab1Fields = buildDefaultFields(parseTicket({}));
+let tab1CardSize = { w: DEFAULT_CARD_WIDTH_MM, h: DEFAULT_CARD_HEIGHT_MM };
+let tab1Selected = null;
+let tab1GlobalFont = DEFAULT_FONT_FSCG;
+let templateImgRef = null;
+
+// Drag state
+const dragRef = { id: null, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
+
+// ── Upload handlers ─────────────────────────────────────────────────────
 const csvBox=document.getElementById('csvBox'), csvInput=document.getElementById('csvInput');
 const imgBox=document.getElementById('imgBox'), imgInput=document.getElementById('imgInput');
 csvBox.onclick = () => csvInput.click();
@@ -457,7 +831,14 @@ imgBox.ondrop = e => { e.preventDefault(); imgBox.classList.remove('dragover'); 
 imgInput.onchange = e => { if(e.target.files[0]) handleImg(e.target.files[0]); };
 function handleImg(file) {
     const reader = new FileReader();
-    reader.onload = () => { templateDataURL = reader.result; imgBox.classList.add('done'); imgBox.querySelector('p').textContent = file.name; checkReady(); updatePreview(); };
+    reader.onload = async () => {
+        templateDataURL = reader.result;
+        templateImgRef = await loadImg(templateDataURL);
+        imgBox.classList.add('done');
+        imgBox.querySelector('p').textContent = file.name;
+        checkReady();
+        updatePreview();
+    };
     reader.readAsDataURL(file);
 }
 function checkReady() { document.getElementById('genBtn').disabled = !(tickets.length && templateDataURL); }
@@ -466,71 +847,308 @@ function onOnePerPage(){
     const pp=document.getElementById('perPage');
     pp.disabled=on; pp.style.opacity=on?0.4:1;
 }
-function S() {
-    const _o=ordCfg('ordStart');
-    return {
-        qr_x:N('qr_x'), qr_y:N('qr_y'), qr_size:N('qr_size'),
-        qrFrame: document.getElementById('qrFrame').checked,
-        showOrd: document.getElementById('showOrd').checked,
-        ordStart: _o.start, ordPad: _o.pad,
-        ord_x:N('ord_x'), ord_y:N('ord_y'), ord_fs:N('ord_fs'),
-        showTid: document.getElementById('showTid').checked,
-        tid_x:N('tid_x'), tid_y:N('tid_y'), tid_fs:N('tid_fs'),
-        perPage: parseInt(document.getElementById('perPage').value)||4,
-        onePerPage: document.getElementById('onePerPage').checked,
-        crop: document.getElementById('opCrop').checked,
-        optimize: document.getElementById('optimizePdf').checked,
-        reorder: document.getElementById('reorderCut').checked,
-        pagesPerDeck: parseInt(document.getElementById('pagesPerDeck').value)||100
-    };
-}
-function N(id){return parseFloat(document.getElementById(id).value);}
-function fmtVal(v){ const n=parseFloat(v); return n%1===0 ? n : n.toFixed(1); }
-function onSlider(el){ document.getElementById(el.id+'_v').textContent=fmtVal(el.value); schedPreview(); }
-function nudge(id,delta){ const el=document.getElementById(id); const nv=Math.min(parseFloat(el.max),Math.max(parseFloat(el.min),parseFloat(el.value)+delta)); el.value=nv; if(id.startsWith('d_')) onSliderD(el); else onSlider(el); }
-function schedPreview(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview,150); }
-function toggleSection(){
-    document.getElementById('ordSettings').classList.toggle('collapsed', !document.getElementById('showOrd').checked);
-    document.getElementById('tidSettings').classList.toggle('collapsed', !document.getElementById('showTid').checked);
+// ── Dimenzije karte ─────────────────────────────────────────────────────
+function onCardSizeChange() {
+    const w = Math.max(10, Number(document.getElementById('cardW').value) || DEFAULT_CARD_WIDTH_MM);
+    const h = Math.max(10, Number(document.getElementById('cardH').value) || DEFAULT_CARD_HEIGHT_MM);
+    tab1CardSize = { w, h };
+    saveLocal();
     schedPreview();
 }
+function autoSizeFromImage() {
+    if (!templateImgRef) { alert('Prvo ucitaj sliku karte.'); return; }
+    const asp = (templateImgRef.naturalWidth||templateImgRef.width) / (templateImgRef.naturalHeight||templateImgRef.height);
+    const newH = Math.round(tab1CardSize.w / asp * 10) / 10;
+    tab1CardSize = { w: tab1CardSize.w, h: newH };
+    document.getElementById('cardW').value = tab1CardSize.w;
+    document.getElementById('cardH').value = tab1CardSize.h;
+    saveLocal();
+    schedPreview();
+}
+function onGlobalFontChange() {
+    tab1GlobalFont = document.getElementById('globalFont').value;
+    saveLocal();
+    schedPreview();
+}
+
+// ── Lista polja ─────────────────────────────────────────────────────────
+function renderFieldList() {
+    const box = document.getElementById('fieldList');
+    if (!box) return;
+    box.innerHTML = '';
+    tab1Fields.forEach(f => {
+        const row = document.createElement('div');
+        const sel = f.id === tab1Selected;
+        row.style.cssText = `padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center;${sel?'background:#ff0;color:#000;font-weight:600':'color:#9ca3af'}`;
+        row.onclick = () => selectField(f.id);
+        const left = document.createElement('span');
+        left.style.cssText = 'display:flex;align-items:center;gap:6px';
+        const eye = document.createElement('input');
+        eye.type = 'checkbox'; eye.checked = !f.hidden;
+        eye.title = 'Vidljivo';
+        eye.onclick = (e) => { e.stopPropagation(); f.hidden = !eye.checked; saveLocal(); schedPreview(); };
+        left.appendChild(eye);
+        const lbl = document.createElement('span');
+        lbl.textContent = f.label + (f.isCustom?' ✱':'');
+        left.appendChild(lbl);
+        row.appendChild(left);
+        const right = document.createElement('span');
+        right.style.cssText = 'opacity:0.6;font-size:10px';
+        right.textContent = `${f.left},${f.top}`;
+        row.appendChild(right);
+        box.appendChild(row);
+    });
+}
+
+function selectField(id) {
+    tab1Selected = id;
+    renderFieldList();
+    updateDetailPanel();
+    schedPreview();
+}
+
+function updateDetailPanel() {
+    const card = document.getElementById('fieldDetailCard');
+    if (!card) return;
+    const f = tab1Fields.find(x => x.id === tab1Selected);
+    if (!f) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    document.getElementById('fieldDetailLabel').textContent = f.label;
+    document.getElementById('deleteFieldBtn').style.display = f.isCustom ? '' : 'none';
+    document.getElementById('f_left').value = f.left;
+    document.getElementById('f_top').value = f.top;
+    document.getElementById('f_fs').value = f.fontSize;
+    document.getElementById('f_fw').value = f.fontWeight || 400;
+    document.getElementById('f_color').value = f.color || '#000000';
+    document.getElementById('f_qrSize_row').style.display = f.isQr ? '' : 'none';
+    if (f.isQr) document.getElementById('f_qrSize').value = f.qrSize || 30;
+    document.getElementById('f_align_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('f_width_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('f_font_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('f_text_row').style.display = f.isQr ? 'none' : '';
+    if (!f.isQr) {
+        document.getElementById('f_align').value = f.textAlign || 'left';
+        document.getElementById('f_width').value = f.width || '';
+        document.getElementById('f_font').value = f.fontFamily || '';
+        document.getElementById('f_text').value = f.text || '';
+    }
+}
+
+function onFieldDetailChange(key, val) {
+    const f = tab1Fields.find(x => x.id === tab1Selected);
+    if (!f) return;
+    if (key === 'width' && (val === '' || val == null)) {
+        delete f.width;
+    } else if (['left','top','fontSize','qrSize','width'].includes(key)) {
+        f[key] = Number(val);
+    } else if (key === 'fontFamily' && !val) {
+        delete f.fontFamily;
+    } else {
+        f[key] = val;
+    }
+    saveLocal();
+    schedPreview();
+    renderFieldList();
+}
+
+function addCustomField() {
+    const id = 'custom-' + Date.now();
+    tab1Fields.push({
+        id, label: 'Custom tekst', text: 'Novi tekst',
+        left: 50, top: 40, fontSize: 10, fontWeight: 400,
+        color: '#000000', isCustom: true,
+    });
+    saveLocal();
+    selectField(id);
+}
+function deleteSelectedField() {
+    const idx = tab1Fields.findIndex(x => x.id === tab1Selected && x.isCustom);
+    if (idx === -1) return;
+    tab1Fields.splice(idx, 1);
+    tab1Selected = null;
+    saveLocal();
+    renderFieldList();
+    updateDetailPanel();
+    schedPreview();
+}
+
+// ── Settings export za render flow ──────────────────────────────────────
+function S() {
+    return {
+        fields: tab1Fields,
+        cardSize: tab1CardSize,
+        globalFont: tab1GlobalFont,
+        qrFrame: document.getElementById('qrFrame').checked,
+        perPage: parseInt(document.getElementById('perPage').value) || 4,
+        onePerPage: document.getElementById('onePerPage').checked,
+        crop: document.getElementById('opCrop').checked,
+        bleed: Math.max(0, Number(document.getElementById('bleed').value) || 0),
+        optimize: document.getElementById('optimizePdf').checked,
+        reorder: document.getElementById('reorderCut').checked,
+        pagesPerDeck: parseInt(document.getElementById('pagesPerDeck').value) || 100,
+    };
+}
+
+function schedPreview(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(updatePreview, 150); }
+// ── localStorage persistencija ──────────────────────────────────────────
+function saveLocal() {
+    try {
+        const data = { fields: tab1Fields, cardSize: tab1CardSize, globalFont: tab1GlobalFont };
+        localStorage.setItem(TAB1_STORAGE_KEY, JSON.stringify(data));
+    } catch(e) { /* ignore */ }
+}
+function loadLocal() {
+    try {
+        const raw = localStorage.getItem(TAB1_STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.fields)) tab1Fields = data.fields;
+        if (data.cardSize && data.cardSize.w && data.cardSize.h) {
+            tab1CardSize = data.cardSize;
+            const cw = document.getElementById('cardW'); if (cw) cw.value = data.cardSize.w;
+            const ch = document.getElementById('cardH'); if (ch) ch.value = data.cardSize.h;
+        }
+        if (data.globalFont) {
+            tab1GlobalFont = data.globalFont;
+            const gf = document.getElementById('globalFont'); if (gf) gf.value = data.globalFont;
+        }
+    } catch(e) { /* ignore */ }
+}
+
+// ── JSON šablon export/import ───────────────────────────────────────────
 function saveSettings() {
-    const b=new Blob([JSON.stringify(S(),null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ticket_settings.json'; a.click();
+    const data = { fields: tab1Fields, cardSize: tab1CardSize, globalFont: tab1GlobalFont };
+    const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'fscg_template.json';
+    a.click();
 }
 document.getElementById('loadInput').onchange = async e => {
-    const f=e.target.files[0]; if(!f) return;
+    const f = e.target.files[0]; if (!f) return;
     try {
-        const s=JSON.parse(await f.text());
-        ['qr_x','qr_y','qr_size','ord_x','ord_y','ord_fs','tid_x','tid_y','tid_fs'].forEach(k=>{if(s[k]!==undefined){document.getElementById(k).value=s[k];document.getElementById(k+'_v').textContent=s[k];}});
-        if(s.perPage) document.getElementById('perPage').value=s.perPage;
-        if(s.onePerPage!==undefined){ document.getElementById('onePerPage').checked=s.onePerPage; onOnePerPage(); }
-        if(s.crop!==undefined) document.getElementById('opCrop').checked=s.crop;
-        if(s.optimize!==undefined) document.getElementById('optimizePdf').checked=s.optimize;
-        if(s.reorder!==undefined) document.getElementById('reorderCut').checked=s.reorder;
-        if(s.pagesPerDeck) document.getElementById('pagesPerDeck').value=s.pagesPerDeck;
-        if(s.ordStart!==undefined) document.getElementById('ordStart').value=fmtOrd(s.ordStart, s.ordPad||1);
-        if(s.qrFrame!==undefined) document.getElementById('qrFrame').checked=s.qrFrame;
-        if(s.showOrd!==undefined) document.getElementById('showOrd').checked=s.showOrd;
-        if(s.showTid!==undefined) document.getElementById('showTid').checked=s.showTid;
-        toggleSection(); updatePreview();
-    } catch(e){alert('Greska: '+e.message);}
-    e.target.value='';
+        const data = JSON.parse(await f.text());
+        if (Array.isArray(data.fields)) tab1Fields = data.fields;
+        if (data.cardSize && data.cardSize.w && data.cardSize.h) {
+            tab1CardSize = data.cardSize;
+            document.getElementById('cardW').value = data.cardSize.w;
+            document.getElementById('cardH').value = data.cardSize.h;
+        }
+        if (data.globalFont) {
+            tab1GlobalFont = data.globalFont;
+            document.getElementById('globalFont').value = data.globalFont;
+        }
+        saveLocal();
+        renderFieldList();
+        updateDetailPanel();
+        updatePreview();
+    } catch(err) { alert('Greska pri ucitavanju: ' + err.message); }
+    e.target.value = '';
 };
-async function updatePreview(){
-    const box=document.getElementById('previewBox');
-    if(!templateDataURL){box.innerHTML='<p>Ucitaj sliku za preview</p>';return;}
-    try{
+
+// ── Preview (drag&drop HTML overlay) ────────────────────────────────────
+async function updatePreview() {
+    const box = document.getElementById('previewBox');
+    if (!templateDataURL) { box.innerHTML = '<p>Ucitaj sliku za preview</p>'; renderFieldList(); return; }
+    try {
         await ensureFont();
-        const img=await loadImg(templateDataURL);
-        const s=S();
-        const smp=tickets[0];
-        const tId=smp?smp.ticketId:'TICKET-ID';
-        const qd=smp?smp.qr_code:'test123';
-        const on=smp?fmtOrd(s.ordStart+smp.ordinal-1,s.ordPad):fmtOrd(s.ordStart,s.ordPad);
-        const c=await renderTicket(img,tId,qd,on,s,700);
-        box.innerHTML=''; box.appendChild(c);
-    } catch(e){ console.error('Preview error:',e); }
+        if (!templateImgRef) templateImgRef = await loadImg(templateDataURL);
+
+        const parsed = parseTicket(tickets[0] || {});
+
+        box.innerHTML = '';
+        const maxW = Math.min(box.clientWidth || 700, 900);
+        const wrapH = Math.round(maxW * tab1CardSize.h / tab1CardSize.w);
+
+        const wrap = document.createElement('div');
+        wrap.id = 'previewWrap';
+        wrap.style.cssText = `position:relative;width:${maxW}px;height:${wrapH}px;background:#fff;background-image:url('${templateDataURL}');background-size:100% 100%;background-repeat:no-repeat;user-select:none;cursor:default;overflow:hidden`;
+        wrap.onmousemove = onPreviewMouseMove;
+        wrap.onmouseup = onPreviewMouseUp;
+        wrap.onmouseleave = onPreviewMouseUp;
+        wrap.onclick = (e) => { if (e.target === wrap) { tab1Selected = null; renderFieldList(); updateDetailPanel(); } };
+
+        const pxPerMm = maxW / tab1CardSize.w;
+
+        tab1Fields.forEach(f => {
+            if (f.hidden) return;
+            const isSel = f.id === tab1Selected;
+            const x = f.left * pxPerMm;
+            const y = f.top  * pxPerMm;
+
+            if (f.isQr) {
+                const qs = (f.qrSize || 30) * pxPerMm;
+                const d = document.createElement('div');
+                d.dataset.id = f.id;
+                d.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${qs}px;height:${qs}px;border:${isSel?'2px solid #ff0':'1px dashed #999'};background:${isSel?'rgba(255,255,0,0.15)':'rgba(255,255,255,0.7)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;cursor:grab;font-weight:600;z-index:${isSel?100:10};box-sizing:border-box`;
+                d.textContent = 'QR';
+                d.onmousedown = (ev) => onFieldMouseDown(ev, f.id);
+                wrap.appendChild(d);
+                return;
+            }
+
+            const text = (fieldTextFromTicket(f.id, parsed) ?? f.text ?? '').toString();
+            if (!text) return;
+            const fontPx = f.fontSize * 0.3528 * pxPerMm;
+            const family = f.fontFamily || tab1GlobalFont;
+            const d = document.createElement('div');
+            d.dataset.id = f.id;
+            const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:normal` : 'white-space:nowrap';
+            const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
+            d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
+            d.textContent = text;
+            d.onmousedown = (ev) => onFieldMouseDown(ev, f.id);
+            wrap.appendChild(d);
+        });
+
+        box.appendChild(wrap);
+        renderFieldList();
+        updateDetailPanel();
+    } catch(e) { console.error('Preview error:', e); }
+}
+
+// ── Drag handlers ───────────────────────────────────────────────────────
+function onFieldMouseDown(e, id) {
+    e.stopPropagation();
+    e.preventDefault();
+    const f = tab1Fields.find(x => x.id === id);
+    if (!f) return;
+    tab1Selected = id;
+    dragRef.id = id;
+    dragRef.startX = e.clientX;
+    dragRef.startY = e.clientY;
+    dragRef.origLeft = f.left;
+    dragRef.origTop = f.top;
+    renderFieldList();
+    updateDetailPanel();
+}
+function onPreviewMouseMove(e) {
+    if (!dragRef.id) return;
+    const wrap = document.getElementById('previewWrap');
+    if (!wrap) return;
+    const pxPerMm = wrap.offsetWidth / tab1CardSize.w;
+    const dx = (e.clientX - dragRef.startX) / pxPerMm;
+    const dy = (e.clientY - dragRef.startY) / pxPerMm;
+    const f = tab1Fields.find(x => x.id === dragRef.id);
+    if (!f) return;
+    f.left = Math.round((dragRef.origLeft + dx) * 10) / 10;
+    f.top  = Math.round((dragRef.origTop  + dy) * 10) / 10;
+    const node = wrap.querySelector(`[data-id="${dragRef.id}"]`);
+    if (node) {
+        node.style.left = (f.left * pxPerMm) + 'px';
+        node.style.top  = (f.top  * pxPerMm) + 'px';
+    }
+    if (tab1Selected === dragRef.id) {
+        const li = document.getElementById('f_left'); if (li) li.value = f.left;
+        const ti = document.getElementById('f_top');  if (ti) ti.value = f.top;
+    }
+}
+function onPreviewMouseUp() {
+    if (dragRef.id) {
+        saveLocal();
+        renderFieldList();
+        dragRef.id = null;
+    }
 }
 function reorder(tix,ppd){
     const tpp=parseInt(document.getElementById('perPage').value)||4, chunk=ppd*tpp, re=[];
@@ -541,76 +1159,81 @@ function reorder(tix,ppd){
     }
     return re;
 }
-async function generate(){
-    if(!tickets.length||!templateDataURL)return;
-    const s=S(), {jsPDF}=window.jspdf;
-    let tix=[...tickets]; if(s.reorder && !s.onePerPage) tix=reorder(tix,s.pagesPerDeck);
+async function generate() {
+    if (!tickets.length || !templateDataURL) return;
+    const s = S(), { jsPDF } = window.jspdf;
+    let tix = [...tickets];
+    if (s.reorder && !s.onePerPage) tix = reorder(tix, s.pagesPerDeck);
     await ensureFont();
-    const tplImg=await loadImg(templateDataURL);
-    const targetW=s.optimize?1400:null, total=tix.length;
-    document.getElementById('genBtn').disabled=true;
-    showProg(0,'Pocinjem...');
+    const tplImg = await loadImg(templateDataURL);
+    const targetW = s.optimize ? 1400 : null, total = tix.length;
+    document.getElementById('genBtn').disabled = true;
+    showProg(0, 'Pocinjem...');
 
-    const imgQ = s.optimize ? 0.85 : 0.92;   // uvek JPEG (PNG je ~40x veci -> RangeError kod velikih batch-eva)
+    const imgQ = s.optimize ? 0.85 : 0.92;
+    const renderOpts = { maxW: targetW, cardWidthMm: s.cardSize.w, cardHeightMm: s.cardSize.h, qrFrame: s.qrFrame };
 
-    if(s.onePerPage){
-        // Jedna karta po stranici: stranica = velicina karte + 3mm prepust (kao dvostrana stampa)
-        const asp=(tplImg.naturalWidth||tplImg.width)/(tplImg.naturalHeight||tplImg.height);
-        const pageW=200, pageH=Math.round(pageW/asp*100)/100;
-        const orient=pageW>=pageH?'landscape':'portrait';
-        const batch=makeBatcher('tickets', ()=> new jsPDF({orientation:orient,unit:'mm',format:[pageW,pageH],compress:true}));
-        for(let i=0;i<total;i++){
-            const t=tix[i]; if(!t)continue;
-            const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
-            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
-            const imgData=tc.toDataURL('image/jpeg',imgQ);
-            const {doc,fresh}=batch.page(imgData.length);
-            if(!fresh) doc.addPage([pageW,pageH], orient);
-            doc.addImage(imgData,'JPEG',0,0,pageW,pageH);
-            if(s.crop) addCropMarks(doc,pageW,pageH,3);
-            if((i+1)%2===0||i===total-1){showProg((i+1)/total*100,(i+1)+'/'+total+' karata');await new Promise(r=>setTimeout(r,0));}
+    if (s.onePerPage) {
+        // Stranica = dimenzija karte + prepust (bleed) sa svih strana
+        const bl = s.bleed;
+        const pageW = s.cardSize.w + 2*bl, pageH = s.cardSize.h + 2*bl;
+        const orient = pageW >= pageH ? 'landscape' : 'portrait';
+        const batch = makeBatcher('tickets', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true }));
+        for (let i = 0; i < total; i++) {
+            const t = tix[i]; if (!t) continue;
+            const tc = await renderTicketFscg(tplImg, t, s.fields, renderOpts);
+            const imgData = tc.toDataURL('image/jpeg', imgQ);
+            const { doc, fresh } = batch.page(imgData.length);
+            if (!fresh) doc.addPage([pageW, pageH], orient);
+            doc.addImage(imgData, 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
+            if (s.crop && bl > 0) addCropMarks(doc, pageW, pageH, bl);
+            if ((i+1)%2===0 || i===total-1) { showProg((i+1)/total*100, (i+1)+'/'+total+' karata'); await new Promise(r => setTimeout(r, 0)); }
         }
-        const files=batch.finish();
+        const files = batch.finish();
         hideProg();
-        offerPdf(files,'PDF generisan! '+total+' karata, '+total+' stranica'+(files.length>1?(' u '+files.length+' fajla (zbog velicine)'):'')+'. List '+pageW+'×'+pageH+'mm'+(s.crop?(', karta po rezu '+(pageW-6)+'×'+(Math.round((pageH-6)*10)/10)+'mm (sa oznakama za rezanje)'):'')+'.','statusBox');
-        document.getElementById('genBtn').disabled=false;
+        offerPdf(files, 'PDF generisan! '+total+' karata, '+total+' stranica'+(files.length>1?(' u '+files.length+' fajla'):'')+'. List '+pageW+'×'+pageH+'mm (karta '+s.cardSize.w+'×'+s.cardSize.h+'mm + '+bl+'mm prepust).', 'statusBox');
+        document.getElementById('genBtn').disabled = false;
         return;
     }
 
-    const mg=7, tpp=s.perPage;
-    const pw=210,ph=297, tw=pw-2*mg, th=(ph-(tpp+1)*mg)/tpp;
-    const pagesTotal=Math.ceil(total/tpp);
-    const batch=makeBatcher('tickets', ()=> new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true}));
-    let done=0;
-    for(let p=0;p<pagesTotal;p++){
-        const items=[];
-        for(let k=0;k<tpp;k++){
-            const idx=p*tpp+k; if(idx>=total) break;
-            const t=tix[idx]; if(!t) continue;
-            const ordVal=t.ordinal!=null?fmtOrd(s.ordStart+t.ordinal-1,s.ordPad):null;
-            const tc=await renderTicket(tplImg,t.ticketId,t.qr_code,ordVal,s,targetW);
-            items.push({ data:tc.toDataURL('image/jpeg',imgQ), asp:tc.width/tc.height, slot:k });
+    const mg = 7, tpp = s.perPage;
+    const pw = 210, ph = 297, tw = pw - 2*mg, th = (ph - (tpp+1)*mg) / tpp;
+    const pagesTotal = Math.ceil(total/tpp);
+    const batch = makeBatcher('tickets', () => new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true }));
+    let done = 0;
+    for (let p = 0; p < pagesTotal; p++) {
+        const items = [];
+        for (let k = 0; k < tpp; k++) {
+            const idx = p*tpp + k; if (idx >= total) break;
+            const t = tix[idx]; if (!t) continue;
+            const tc = await renderTicketFscg(tplImg, t, s.fields, renderOpts);
+            items.push({ data: tc.toDataURL('image/jpeg', imgQ), asp: tc.width/tc.height, slot: k });
         }
-        if(!items.length) continue;
-        const pageBytes=items.reduce((a,it)=>a+it.data.length,0);
-        const {doc,fresh}=batch.page(pageBytes);
-        if(!fresh) doc.addPage();
-        for(const it of items){
-            const yPos=mg+it.slot*(th+mg);
-            const imgAsp=it.asp, slotAsp=tw/th;
-            let dw,dh,dx,dy;
-            if(imgAsp>slotAsp){dw=tw;dh=tw/imgAsp;dx=mg;dy=yPos+(th-dh)/2;}
-            else{dh=th;dw=th*imgAsp;dx=mg+(tw-dw)/2;dy=yPos;}
-            doc.addImage(it.data,'JPEG',dx,dy,dw,dh);
+        if (!items.length) continue;
+        const pageBytes = items.reduce((a, it) => a + it.data.length, 0);
+        const { doc, fresh } = batch.page(pageBytes);
+        if (!fresh) doc.addPage();
+        for (const it of items) {
+            const yPos = mg + it.slot*(th + mg);
+            const imgAsp = it.asp, slotAsp = tw/th;
+            let dw, dh, dx, dy;
+            if (imgAsp > slotAsp) { dw = tw; dh = tw/imgAsp; dx = mg; dy = yPos + (th - dh)/2; }
+            else { dh = th; dw = th*imgAsp; dx = mg + (tw - dw)/2; dy = yPos; }
+            doc.addImage(it.data, 'JPEG', dx, dy, dw, dh);
         }
-        done+=items.length;
-        showProg(done/total*100,done+'/'+total+' karata'); await new Promise(r=>setTimeout(r,0));
+        done += items.length;
+        showProg(done/total*100, done+'/'+total+' karata'); await new Promise(r => setTimeout(r, 0));
     }
-    const files=batch.finish();
+    const files = batch.finish();
     hideProg();
-    offerPdf(files,'PDF generisan! '+total+' karata, '+pagesTotal+' stranica'+(files.length>1?(' u '+files.length+' fajla (zbog velicine)'):'')+'.','statusBox');
-    document.getElementById('genBtn').disabled=false;
+    offerPdf(files, 'PDF generisan! '+total+' karata, '+pagesTotal+' stranica'+(files.length>1?(' u '+files.length+' fajla'):'')+'.', 'statusBox');
+    document.getElementById('genBtn').disabled = false;
 }
+
+// ── Init Tab 1 ──────────────────────────────────────────────────────────
+loadLocal();
+renderFieldList();
+updateDetailPanel();
 function showMsg(m,t){const e=document.getElementById('statusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
 function buildPdfBlob(doc){ try{ return doc.output('blob'); }catch(err){ console.error('PDF blob greska:',err); return null; } }
 function makeBatcher(baseName, newDocFn){
@@ -653,13 +1276,19 @@ function offerPdf(files, msg, boxId){
 function showProg(p,t){document.getElementById('progBar').style.display='block';document.getElementById('progFill').style.width=p+'%';document.getElementById('progText').textContent=t||Math.round(p)+'%';}
 function hideProg(){document.getElementById('progBar').style.display='none';}
 
-// ===== TAB 2: DVOSTRANA ŠTAMPA =====
-// Karta sa prepustom: 200 x 97 mm (20cm x 9.7cm), prepust 3mm sa svih strana
-const BLEED_W = 200, BLEED_H = 97;
+// ===== TAB 2: DVOSTRANA ŠTAMPA (FSCG MODEL) =====
+const TAB2_STORAGE_KEY = 'tgp-fscg-template-d-v1';
 
 let tickets2 = [], frontDataURL = null, backDataURL = null, debounceTimer2 = null;
+let tab2Fields = buildDefaultFields(parseTicket({}));
+let tab2CardSize = { w: DEFAULT_CARD_WIDTH_MM, h: DEFAULT_CARD_HEIGHT_MM };
+let tab2BleedMm = 3;
+let tab2Selected = null;
+let tab2GlobalFont = DEFAULT_FONT_FSCG;
+let frontImgRef = null;
+const dragRefD = { id: null, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
 
-// Upload: CSV
+// ── Upload handlers ─────────────────────────────────────────────────────
 const dCsvBox=document.getElementById('dCsvBox'), dCsvInput=document.getElementById('dCsvInput');
 dCsvBox.ondragover = e => { e.preventDefault(); dCsvBox.classList.add('dragover'); };
 dCsvBox.ondragleave = () => dCsvBox.classList.remove('dragover');
@@ -673,7 +1302,6 @@ async function handleCsvD(file) {
     } catch(e) { showMsgD('Greska: '+e.message, 'error'); }
 }
 
-// Upload: prednja strana
 const dFrontBox=document.getElementById('dFrontBox'), dFrontInput=document.getElementById('dFrontInput');
 dFrontBox.ondragover = e => { e.preventDefault(); dFrontBox.classList.add('dragover'); };
 dFrontBox.ondragleave = () => dFrontBox.classList.remove('dragover');
@@ -681,15 +1309,17 @@ dFrontBox.ondrop = e => { e.preventDefault(); dFrontBox.classList.remove('dragov
 dFrontInput.onchange = e => { if(e.target.files[0]) handleFront(e.target.files[0]); };
 function handleFront(file) {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
         frontDataURL = reader.result;
-        dFrontBox.classList.add('done'); dFrontBox.querySelector('p').textContent = file.name;
-        checkReadyD(); updatePreviewD();
+        frontImgRef = await loadImg(frontDataURL);
+        dFrontBox.classList.add('done');
+        dFrontBox.querySelector('p').textContent = file.name;
+        checkReadyD();
+        updatePreviewD();
     };
     reader.readAsDataURL(file);
 }
 
-// Upload: zadnja strana
 const dBackBox=document.getElementById('dBackBox'), dBackInput=document.getElementById('dBackInput');
 dBackBox.ondragover = e => { e.preventDefault(); dBackBox.classList.add('dragover'); };
 dBackBox.ondragleave = () => dBackBox.classList.remove('dragover');
@@ -699,7 +1329,8 @@ function handleBack(file) {
     const reader = new FileReader();
     reader.onload = () => {
         backDataURL = reader.result;
-        dBackBox.classList.add('done'); dBackBox.querySelector('p').textContent = file.name;
+        dBackBox.classList.add('done');
+        dBackBox.querySelector('p').textContent = file.name;
         updatePreviewD();
     };
     reader.readAsDataURL(file);
@@ -709,45 +1340,281 @@ function checkReadyD() {
     document.getElementById('dGenBtn').disabled = !(tickets2.length && frontDataURL);
 }
 
-function SD() {
-    const _o=ordCfg('d_ordStart');
-    return {
-        qr_x: ND('d_qr_x'), qr_y: ND('d_qr_y'), qr_size: ND('d_qr_size'),
-        qrFrame: document.getElementById('d_qrFrame').checked,
-        showOrd: document.getElementById('dShowOrd').checked,
-        ordStart: _o.start, ordPad: _o.pad,
-        ord_x: ND('d_ord_x'), ord_y: ND('d_ord_y'), ord_fs: ND('d_ord_fs'),
-        showTid: document.getElementById('dShowTid').checked,
-        tid_x: ND('d_tid_x'), tid_y: ND('d_tid_y'), tid_fs: ND('d_tid_fs'),
-        printOrder: document.getElementById('dPrintOrder').value,
-        cropMarks: document.getElementById('dCropMarks').checked
-    };
+// ── Dimenzije + prepust + globalni font ─────────────────────────────────
+function updateBleedInfoD() {
+    const w = tab2CardSize.w, h = tab2CardSize.h, b = tab2BleedMm;
+    document.getElementById('dBleedInfo').innerHTML =
+        `<strong>Karta:</strong> ${w}×${h} mm &nbsp;|&nbsp; ` +
+        `<strong>Prepust:</strong> ${b}mm sa svih strana &nbsp;|&nbsp; ` +
+        `<strong>Stranica PDF-a:</strong> ${w+2*b}×${h+2*b} mm &nbsp;|&nbsp; ` +
+        `Jedna karta po stranici`;
 }
-function ND(id){ return parseFloat(document.getElementById(id).value); }
-function onSliderD(el){ document.getElementById(el.id+'_v').textContent=fmtVal(el.value); schedPreviewD(); }
-function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2=setTimeout(updatePreviewD,150); }
-function toggleSectionD(){
-    document.getElementById('dOrdSettings').classList.toggle('collapsed', !document.getElementById('dShowOrd').checked);
-    document.getElementById('dTidSettings').classList.toggle('collapsed', !document.getElementById('dShowTid').checked);
+function onCardSizeChangeD() {
+    const w = Math.max(10, Number(document.getElementById('dCardW').value) || DEFAULT_CARD_WIDTH_MM);
+    const h = Math.max(10, Number(document.getElementById('dCardH').value) || DEFAULT_CARD_HEIGHT_MM);
+    tab2CardSize = { w, h };
+    updateBleedInfoD();
+    saveLocalD();
+    schedPreviewD();
+}
+function onBleedChangeD() {
+    tab2BleedMm = Math.max(0, Number(document.getElementById('dBleed').value) || 0);
+    updateBleedInfoD();
+    saveLocalD();
+}
+function autoSizeFromImageD() {
+    if (!frontImgRef) { alert('Prvo ucitaj prednju stranu.'); return; }
+    const asp = (frontImgRef.naturalWidth||frontImgRef.width) / (frontImgRef.naturalHeight||frontImgRef.height);
+    const newH = Math.round(tab2CardSize.w / asp * 10) / 10;
+    tab2CardSize = { w: tab2CardSize.w, h: newH };
+    document.getElementById('dCardW').value = tab2CardSize.w;
+    document.getElementById('dCardH').value = tab2CardSize.h;
+    updateBleedInfoD();
+    saveLocalD();
+    schedPreviewD();
+}
+function onGlobalFontChangeD() {
+    tab2GlobalFont = document.getElementById('dGlobalFont').value;
+    saveLocalD();
     schedPreviewD();
 }
 
+// ── Lista polja + detail panel ──────────────────────────────────────────
+function renderFieldListD() {
+    const box = document.getElementById('dFieldList');
+    if (!box) return;
+    box.innerHTML = '';
+    tab2Fields.forEach(f => {
+        const row = document.createElement('div');
+        const sel = f.id === tab2Selected;
+        row.style.cssText = `padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center;${sel?'background:#ff0;color:#000;font-weight:600':'color:#9ca3af'}`;
+        row.onclick = () => selectFieldD(f.id);
+        const left = document.createElement('span');
+        left.style.cssText = 'display:flex;align-items:center;gap:6px';
+        const eye = document.createElement('input');
+        eye.type = 'checkbox'; eye.checked = !f.hidden; eye.title = 'Vidljivo';
+        eye.onclick = (e) => { e.stopPropagation(); f.hidden = !eye.checked; saveLocalD(); schedPreviewD(); };
+        left.appendChild(eye);
+        const lbl = document.createElement('span');
+        lbl.textContent = f.label + (f.isCustom?' ✱':'');
+        left.appendChild(lbl);
+        row.appendChild(left);
+        const right = document.createElement('span');
+        right.style.cssText = 'opacity:0.6;font-size:10px';
+        right.textContent = `${f.left},${f.top}`;
+        row.appendChild(right);
+        box.appendChild(row);
+    });
+}
+function selectFieldD(id) {
+    tab2Selected = id;
+    renderFieldListD();
+    updateDetailPanelD();
+    schedPreviewD();
+}
+function updateDetailPanelD() {
+    const card = document.getElementById('dFieldDetailCard');
+    if (!card) return;
+    const f = tab2Fields.find(x => x.id === tab2Selected);
+    if (!f) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    document.getElementById('dFieldDetailLabel').textContent = f.label;
+    document.getElementById('dDeleteFieldBtn').style.display = f.isCustom ? '' : 'none';
+    document.getElementById('df_left').value = f.left;
+    document.getElementById('df_top').value = f.top;
+    document.getElementById('df_fs').value = f.fontSize;
+    document.getElementById('df_fw').value = f.fontWeight || 400;
+    document.getElementById('df_color').value = f.color || '#000000';
+    document.getElementById('df_qrSize_row').style.display = f.isQr ? '' : 'none';
+    if (f.isQr) document.getElementById('df_qrSize').value = f.qrSize || 30;
+    document.getElementById('df_align_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('df_width_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('df_font_row').style.display = f.isQr ? 'none' : '';
+    document.getElementById('df_text_row').style.display = f.isQr ? 'none' : '';
+    if (!f.isQr) {
+        document.getElementById('df_align').value = f.textAlign || 'left';
+        document.getElementById('df_width').value = f.width || '';
+        document.getElementById('df_font').value = f.fontFamily || '';
+        document.getElementById('df_text').value = f.text || '';
+    }
+}
+function onFieldDetailChangeD(key, val) {
+    const f = tab2Fields.find(x => x.id === tab2Selected);
+    if (!f) return;
+    if (key === 'width' && (val === '' || val == null)) {
+        delete f.width;
+    } else if (['left','top','fontSize','qrSize','width'].includes(key)) {
+        f[key] = Number(val);
+    } else if (key === 'fontFamily' && !val) {
+        delete f.fontFamily;
+    } else {
+        f[key] = val;
+    }
+    saveLocalD();
+    schedPreviewD();
+    renderFieldListD();
+}
+function addCustomFieldD() {
+    const id = 'custom-' + Date.now();
+    tab2Fields.push({
+        id, label: 'Custom tekst', text: 'Novi tekst',
+        left: 50, top: 40, fontSize: 10, fontWeight: 400,
+        color: '#000000', isCustom: true,
+    });
+    saveLocalD();
+    selectFieldD(id);
+}
+function deleteSelectedFieldD() {
+    const idx = tab2Fields.findIndex(x => x.id === tab2Selected && x.isCustom);
+    if (idx === -1) return;
+    tab2Fields.splice(idx, 1);
+    tab2Selected = null;
+    saveLocalD();
+    renderFieldListD();
+    updateDetailPanelD();
+    schedPreviewD();
+}
+
+// ── Settings export ─────────────────────────────────────────────────────
+function SD() {
+    return {
+        fields: tab2Fields,
+        cardSize: tab2CardSize,
+        bleed: tab2BleedMm,
+        globalFont: tab2GlobalFont,
+        qrFrame: document.getElementById('d_qrFrame').checked,
+        printOrder: document.getElementById('dPrintOrder').value,
+        cropMarks: document.getElementById('dCropMarks').checked,
+    };
+}
+function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2 = setTimeout(updatePreviewD, 150); }
+
+// ── localStorage persistencija ──────────────────────────────────────────
+function saveLocalD() {
+    try {
+        const data = { fields: tab2Fields, cardSize: tab2CardSize, bleed: tab2BleedMm, globalFont: tab2GlobalFont };
+        localStorage.setItem(TAB2_STORAGE_KEY, JSON.stringify(data));
+    } catch(e) { /* ignore */ }
+}
+function loadLocalD() {
+    try {
+        const raw = localStorage.getItem(TAB2_STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.fields)) tab2Fields = data.fields;
+        if (data.cardSize && data.cardSize.w && data.cardSize.h) {
+            tab2CardSize = data.cardSize;
+            const cw = document.getElementById('dCardW'); if (cw) cw.value = data.cardSize.w;
+            const ch = document.getElementById('dCardH'); if (ch) ch.value = data.cardSize.h;
+        }
+        if (typeof data.bleed === 'number') {
+            tab2BleedMm = data.bleed;
+            const bl = document.getElementById('dBleed'); if (bl) bl.value = data.bleed;
+        }
+        if (data.globalFont) {
+            tab2GlobalFont = data.globalFont;
+            const gf = document.getElementById('dGlobalFont'); if (gf) gf.value = data.globalFont;
+        }
+    } catch(e) { /* ignore */ }
+}
+
+// ── JSON šablon export/import ───────────────────────────────────────────
+function saveSettingsD() {
+    const data = { fields: tab2Fields, cardSize: tab2CardSize, bleed: tab2BleedMm, globalFont: tab2GlobalFont };
+    const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'fscg_template_dvostrano.json';
+    a.click();
+}
+document.getElementById('dLoadInput').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+        const data = JSON.parse(await f.text());
+        if (Array.isArray(data.fields)) tab2Fields = data.fields;
+        if (data.cardSize && data.cardSize.w && data.cardSize.h) {
+            tab2CardSize = data.cardSize;
+            document.getElementById('dCardW').value = data.cardSize.w;
+            document.getElementById('dCardH').value = data.cardSize.h;
+        }
+        if (typeof data.bleed === 'number') {
+            tab2BleedMm = data.bleed;
+            document.getElementById('dBleed').value = data.bleed;
+        }
+        if (data.globalFont) {
+            tab2GlobalFont = data.globalFont;
+            document.getElementById('dGlobalFont').value = data.globalFont;
+        }
+        updateBleedInfoD();
+        saveLocalD();
+        renderFieldListD();
+        updateDetailPanelD();
+        updatePreviewD();
+    } catch(err) { alert('Greska pri ucitavanju: ' + err.message); }
+    e.target.value = '';
+};
+
+// ── Preview (drag&drop HTML overlay za prednju + statična zadnja) ───────
 async function updatePreviewD() {
     const frontBox = document.getElementById('dPreviewFront');
     const backBox  = document.getElementById('dPreviewBack');
+
     if (frontDataURL) {
         try {
             await ensureFont();
-            const img = await loadImg(frontDataURL);
-            const sd = SD();
-            const smp = tickets2[0];
-            const tId = smp ? smp.ticketId : 'TICKET-ID';
-            const qd = smp ? smp.qr_code : 'test123';
-            const on = smp ? fmtOrd(sd.ordStart + smp.ordinal - 1, sd.ordPad) : fmtOrd(sd.ordStart, sd.ordPad);
-            const c = await renderTicket(img, tId, qd, on, sd, 600);
-            frontBox.innerHTML = '<div class="preview-side-label">Prednja strana</div>';
-            frontBox.appendChild(c);
-        } catch(e){ console.error(e); }
+            if (!frontImgRef) frontImgRef = await loadImg(frontDataURL);
+
+            const parsed = parseTicket(tickets2[0] || {});
+
+            frontBox.innerHTML = '<div class="preview-side-label">Prednja strana (drag polja)</div>';
+            const maxW = Math.min(frontBox.clientWidth || 400, 500);
+            const wrapH = Math.round(maxW * tab2CardSize.h / tab2CardSize.w);
+
+            const wrap = document.createElement('div');
+            wrap.id = 'dPreviewWrap';
+            wrap.style.cssText = `position:relative;width:${maxW}px;height:${wrapH}px;background:#fff;background-image:url('${frontDataURL}');background-size:100% 100%;background-repeat:no-repeat;user-select:none;cursor:default;overflow:hidden`;
+            wrap.onmousemove = onPreviewMouseMoveD;
+            wrap.onmouseup = onPreviewMouseUpD;
+            wrap.onmouseleave = onPreviewMouseUpD;
+            wrap.onclick = (e) => { if (e.target === wrap) { tab2Selected = null; renderFieldListD(); updateDetailPanelD(); } };
+
+            const pxPerMm = maxW / tab2CardSize.w;
+
+            tab2Fields.forEach(f => {
+                if (f.hidden) return;
+                const isSel = f.id === tab2Selected;
+                const x = f.left * pxPerMm;
+                const y = f.top  * pxPerMm;
+
+                if (f.isQr) {
+                    const qs = (f.qrSize || 30) * pxPerMm;
+                    const d = document.createElement('div');
+                    d.dataset.id = f.id;
+                    d.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${qs}px;height:${qs}px;border:${isSel?'2px solid #ff0':'1px dashed #999'};background:${isSel?'rgba(255,255,0,0.15)':'rgba(255,255,255,0.7)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;cursor:grab;font-weight:600;z-index:${isSel?100:10};box-sizing:border-box`;
+                    d.textContent = 'QR';
+                    d.onmousedown = (ev) => onFieldMouseDownD(ev, f.id);
+                    wrap.appendChild(d);
+                    return;
+                }
+
+                const text = (fieldTextFromTicket(f.id, parsed) ?? f.text ?? '').toString();
+                if (!text) return;
+                const fontPx = f.fontSize * 0.3528 * pxPerMm;
+                const family = f.fontFamily || tab2GlobalFont;
+                const d = document.createElement('div');
+                d.dataset.id = f.id;
+                const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:normal` : 'white-space:nowrap';
+                const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
+                d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
+                d.textContent = text;
+                d.onmousedown = (ev) => onFieldMouseDownD(ev, f.id);
+                wrap.appendChild(d);
+            });
+
+            frontBox.appendChild(wrap);
+            renderFieldListD();
+            updateDetailPanelD();
+        } catch(e) { console.error('Front preview error:', e); }
     }
     if (backDataURL) {
         try {
@@ -758,33 +1625,53 @@ async function updatePreviewD() {
             c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
             backBox.innerHTML = '<div class="preview-side-label">Zadnja strana</div>';
             backBox.appendChild(c);
-        } catch(e){ console.error(e); }
+        } catch(e) { console.error('Back preview error:', e); }
     }
 }
 
-function saveSettingsD() {
-    const b=new Blob([JSON.stringify(SD(),null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ticket_dvostrano_settings.json'; a.click();
+// ── Drag handlers ───────────────────────────────────────────────────────
+function onFieldMouseDownD(e, id) {
+    e.stopPropagation();
+    e.preventDefault();
+    const f = tab2Fields.find(x => x.id === id);
+    if (!f) return;
+    tab2Selected = id;
+    dragRefD.id = id;
+    dragRefD.startX = e.clientX;
+    dragRefD.startY = e.clientY;
+    dragRefD.origLeft = f.left;
+    dragRefD.origTop = f.top;
+    renderFieldListD();
+    updateDetailPanelD();
 }
-document.getElementById('dLoadInput').onchange = async e => {
-    const f=e.target.files[0]; if(!f) return;
-    try {
-        const s=JSON.parse(await f.text());
-        ['d_qr_x','d_qr_y','d_qr_size','d_ord_x','d_ord_y','d_ord_fs','d_tid_x','d_tid_y','d_tid_fs'].forEach(k=>{
-            if(s[k.replace('d_','')]!==undefined){
-                document.getElementById(k).value=s[k.replace('d_','')];
-                document.getElementById(k+'_v').textContent=s[k.replace('d_','')];
-            }
-        });
-        if(s.ordStart!==undefined) document.getElementById('d_ordStart').value=fmtOrd(s.ordStart, s.ordPad||1);
-        if(s.qrFrame!==undefined) document.getElementById('d_qrFrame').checked=s.qrFrame;
-        if(s.showOrd!==undefined) document.getElementById('dShowOrd').checked=s.showOrd;
-        if(s.showTid!==undefined) document.getElementById('dShowTid').checked=s.showTid;
-        if(s.printOrder) document.getElementById('dPrintOrder').value=s.printOrder;
-        toggleSectionD(); updatePreviewD();
-    } catch(e){alert('Greska: '+e.message);}
-    e.target.value='';
-};
+function onPreviewMouseMoveD(e) {
+    if (!dragRefD.id) return;
+    const wrap = document.getElementById('dPreviewWrap');
+    if (!wrap) return;
+    const pxPerMm = wrap.offsetWidth / tab2CardSize.w;
+    const dx = (e.clientX - dragRefD.startX) / pxPerMm;
+    const dy = (e.clientY - dragRefD.startY) / pxPerMm;
+    const f = tab2Fields.find(x => x.id === dragRefD.id);
+    if (!f) return;
+    f.left = Math.round((dragRefD.origLeft + dx) * 10) / 10;
+    f.top  = Math.round((dragRefD.origTop  + dy) * 10) / 10;
+    const node = wrap.querySelector(`[data-id="${dragRefD.id}"]`);
+    if (node) {
+        node.style.left = (f.left * pxPerMm) + 'px';
+        node.style.top  = (f.top  * pxPerMm) + 'px';
+    }
+    if (tab2Selected === dragRefD.id) {
+        const li = document.getElementById('df_left'); if (li) li.value = f.left;
+        const ti = document.getElementById('df_top');  if (ti) ti.value = f.top;
+    }
+}
+function onPreviewMouseUpD() {
+    if (dragRefD.id) {
+        saveLocalD();
+        renderFieldListD();
+        dragRefD.id = null;
+    }
+}
 
 function addCropMarks(doc, pageW, pageH, bleed) {
     const markLen = 3, gap = 0.5;
@@ -814,14 +1701,18 @@ async function generateDouble() {
     genBtn.disabled = true;
     showProgD(0, 'Pocinjem...');
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [BLEED_W, BLEED_H], compress: true });
+    const bl = s.bleed;
+    const pageW = s.cardSize.w + 2*bl;
+    const pageH = s.cardSize.h + 2*bl;
+    const orient = pageW >= pageH ? 'landscape' : 'portrait';
+
+    const doc = new jsPDF({ orientation: orient, unit: 'mm', format: [pageW, pageH], compress: true });
     await ensureFont();
     const frontImg = await loadImg(frontDataURL);
     const backImg  = backDataURL ? await loadImg(backDataURL) : null;
+    const renderOpts = { maxW: null, cardWidthMm: s.cardSize.w, cardHeightMm: s.cardSize.h, qrFrame: s.qrFrame };
 
-    async function canvasToJpeg(canvas) {
-        return canvas.toDataURL('image/jpeg', 0.92);
-    }
+    async function canvasToJpeg(canvas) { return canvas.toDataURL('image/jpeg', 0.92); }
     function imgToCanvas(img) {
         const c = document.createElement('canvas');
         c.width  = img.naturalWidth  || img.width;
@@ -830,41 +1721,38 @@ async function generateDouble() {
         return c;
     }
     async function addFront(t) {
-        const ordVal = t.ordinal!=null ? fmtOrd(s.ordStart + t.ordinal - 1, s.ordPad) : null;
-        const c = await renderTicket(frontImg, t.ticketId, t.qr_code, ordVal, s, null);
-        doc.addImage(await canvasToJpeg(c), 'JPEG', 0, 0, BLEED_W, BLEED_H);
-        if (s.cropMarks) addCropMarks(doc, BLEED_W, BLEED_H, 3);
+        const c = await renderTicketFscg(frontImg, t, s.fields, renderOpts);
+        doc.addImage(await canvasToJpeg(c), 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
+        if (s.cropMarks && bl > 0) addCropMarks(doc, pageW, pageH, bl);
     }
     async function addBack() {
         if (backImg) {
-            doc.addImage(await canvasToJpeg(imgToCanvas(backImg)), 'JPEG', 0, 0, BLEED_W, BLEED_H);
+            doc.addImage(await canvasToJpeg(imgToCanvas(backImg)), 'JPEG', bl, bl, s.cardSize.w, s.cardSize.h);
         } else {
             doc.setFillColor(255, 255, 255);
-            doc.rect(0, 0, BLEED_W, BLEED_H, 'F');
+            doc.rect(bl, bl, s.cardSize.w, s.cardSize.h, 'F');
         }
-        if (s.cropMarks) addCropMarks(doc, BLEED_W, BLEED_H, 3);
+        if (s.cropMarks && bl > 0) addCropMarks(doc, pageW, pageH, bl);
     }
 
     if (s.printOrder === 'interleaved') {
-        // P1, Z1, P2, Z2, ...
         for (let i = 0; i < total; i++) {
-            if (i > 0) doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            if (i > 0) doc.addPage([pageW, pageH], orient);
             await addFront(tickets2[i]);
-            doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            doc.addPage([pageW, pageH], orient);
             await addBack();
             showProgD((i+1)/total*100, (i+1)+'/'+total+' karata');
             await new Promise(r => setTimeout(r, 0));
         }
     } else {
-        // Sve prednje, pa sve zadnje
         for (let i = 0; i < total; i++) {
-            if (i > 0) doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            if (i > 0) doc.addPage([pageW, pageH], orient);
             await addFront(tickets2[i]);
             showProgD((i+1)/(total*2)*100, 'Prednje: '+(i+1)+'/'+total);
             await new Promise(r => setTimeout(r, 0));
         }
         for (let i = 0; i < total; i++) {
-            doc.addPage([BLEED_W, BLEED_H], 'landscape');
+            doc.addPage([pageW, pageH], orient);
             await addBack();
             showProgD(50+(i+1)/(total*2)*100, 'Zadnje: '+(i+1)+'/'+total);
             await new Promise(r => setTimeout(r, 0));
@@ -873,25 +1761,22 @@ async function generateDouble() {
 
     const pages = s.printOrder === 'interleaved' ? total * 2 : (backImg ? total * 2 : total);
     hideProgD();
-    offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],'PDF generisan! ' + total + ' karata, ' + pages + ' stranica. ('+BLEED_W+'×'+BLEED_H+'mm)','dStatusBox');
+    offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],
+        'PDF generisan! ' + total + ' karata, ' + pages + ' stranica. List '+pageW+'×'+pageH+'mm (karta '+s.cardSize.w+'×'+s.cardSize.h+'mm + '+bl+'mm prepust).',
+        'dStatusBox');
     genBtn.disabled = false;
 }
+
+// ── Init Tab 2 ──────────────────────────────────────────────────────────
+loadLocalD();
+updateBleedInfoD();
+renderFieldListD();
+updateDetailPanelD();
 
 function showMsgD(m,t){const e=document.getElementById('dStatusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
 function showProgD(p,t){document.getElementById('dProgBar').style.display='block';document.getElementById('dProgFill').style.width=p+'%';document.getElementById('dProgText').textContent=t||Math.round(p)+'%';}
 function hideProgD(){document.getElementById('dProgBar').style.display='none';}
 
-// Inject − / + nudge buttons into every slider row
-document.querySelectorAll('.sw input[type="range"]').forEach(inp => {
-    const minus = document.createElement('button');
-    minus.className = 'nudge'; minus.textContent = '−'; minus.type = 'button';
-    minus.onclick = () => nudge(inp.id, -0.5);
-    const plus = document.createElement('button');
-    plus.className = 'nudge'; plus.textContent = '+'; plus.type = 'button';
-    plus.onclick = () => nudge(inp.id, 0.5);
-    inp.parentNode.insertBefore(minus, inp);
-    inp.parentNode.appendChild(plus);
-});
 ensureFont();
 </script>
 </body>
