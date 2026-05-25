@@ -1356,7 +1356,8 @@ function showMsg(m,t){const e=document.getElementById('statusBox');e.className='
 function buildPdfBlob(doc){ try{ return doc.output('blob'); }catch(err){ console.error('PDF blob greska:',err); return null; } }
 function makeBatcher(baseName, newDocFn){
     // Deli izlaz u vise PDF fajlova kad bi jedan presao limit JS stringa (~512MB) -> sprecava "Invalid string length"
-    const CAP=170*1024*1024;
+    // CAP=350MB: bezbedno ispod ~512MB limit-a, manja sansa da uopste cijepa fajl.
+    const CAP=350*1024*1024;
     let doc=null, est=0; const blobs=[];
     return {
         page(estBytes){
@@ -1376,19 +1377,44 @@ function makeBatcher(baseName, newDocFn){
 function offerPdf(files, msg, boxId){
     const e=document.getElementById(boxId);
     e.innerHTML='';
+    const validFiles = files.filter(f => f.blob);
     const line=document.createElement('div'); line.textContent=msg; e.appendChild(line);
-    let any=false;
-    files.forEach((f,idx)=>{
-        if(!f.blob) return;
-        any=true;
-        const url=URL.createObjectURL(f.blob);
-        if(idx===0){ try{ const a=document.createElement('a'); a.href=url; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); }catch(err){} }
-        const a=document.createElement('a'); a.href=url; a.download=f.name; a.textContent='⬇ '+f.name;
-        a.style.cssText='display:inline-block;margin:10px 8px 0 0;padding:10px 18px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px';
+    if (!validFiles.length) {
+        e.className='status error';
+        const w=document.createElement('div');
+        w.textContent='Greska pri kreiranju PDF-a (previse podataka). Ukljuci "Optimizuj PDF" ili smanji broj karata po fajlu.';
+        w.style.cssText='margin-top:8px;font-size:12px';
+        e.appendChild(w);
+        e.classList.remove('hidden');
+        return;
+    }
+    // VAŽNO: kada postoji više fajlova, EKSPLICITNO upozori korisnika
+    // (ranija verzija je auto-download-ovala SAMO prvi → korisnici su mislili da je to cijeli PDF).
+    if (validFiles.length > 1) {
+        const warn = document.createElement('div');
+        warn.style.cssText = 'margin-top:10px;padding:12px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;color:#92400e;font-weight:700;font-size:14px;line-height:1.5';
+        warn.innerHTML = `⚠ <strong>PAŽNJA:</strong> PDF je prevelik i podijeljen je na ${validFiles.length} fajlova.<br>` +
+                         `Svi fajlovi će se preuzeti automatski. <strong>OBAVEZNO odštampaj SVE fajlove redom</strong> (ne samo prvi)!<br>` +
+                         `Ako browser blokira neki download, klikni dugme ispod ručno.`;
+        e.appendChild(warn);
+    }
+    // Auto-download SVAKI fajl (sa malim delay-om da browser ne blokira batch-download)
+    validFiles.forEach((f, idx) => {
+        const url = URL.createObjectURL(f.blob);
+        const trigger = document.createElement('a');
+        trigger.href = url;
+        trigger.download = f.name;
+        document.body.appendChild(trigger);
+        setTimeout(() => { try { trigger.click(); } catch(err){} trigger.remove(); }, idx * 600);
+        // Vidljivo dugme za ručno skidanje
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = f.name;
+        a.textContent = '⬇ ' + f.name + (validFiles.length>1 ? ` (${idx+1}/${validFiles.length})` : '');
+        a.style.cssText = 'display:inline-block;margin:10px 8px 0 0;padding:10px 18px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px';
         e.appendChild(a);
     });
-    if(any){ e.className='status success'; }
-    else { e.className='status error'; const w=document.createElement('div'); w.textContent='Greska pri kreiranju PDF-a (previse podataka). Ukljuci "Optimizuj PDF" ili smanji broj karata po fajlu.'; w.style.cssText='margin-top:8px;font-size:12px'; e.appendChild(w); }
+    e.className = 'status success';
     e.classList.remove('hidden');
 }
 function showProg(p,t){document.getElementById('progBar').style.display='block';document.getElementById('progFill').style.width=p+'%';document.getElementById('progText').textContent=t||Math.round(p)+'%';}
