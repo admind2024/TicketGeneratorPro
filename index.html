@@ -577,13 +577,27 @@ function splitEventName(name) {
     const parts = en.split(/ - /);
     return { home: (parts[0] || '').trim(), away: (parts[1] || '').trim(), full: en };
 }
+// Heuristika za razdvajanje "prefiksa" (npr. naziv takmičenja/datum) i "timova"
+// "Finale kupa Crne Gore 2025/26 FK Dečić vs FK Mornar"
+//   → prefix: "Finale kupa Crne Gore 2025/26"
+//   → teams:  "FK Dečić vs FK Mornar"
+// Ako se ne pronađe sportski prefiks tima (FK/FC/NK/RK/KK/HC), prefix je prazan
+// i teams = cijeli naziv.
+function splitEventNameParts(fullName) {
+    const m = String(fullName).match(/^(.+?)\s+((?:FK|FC|NK|RK|KK|HC|TC)\s.+)$/i);
+    if (m) return { prefix: m[1].trim().toUpperCase(), teams: m[2].trim().toUpperCase() };
+    return { prefix: '', teams: String(fullName).toUpperCase() };
+}
 // Parsira jedan CSV red u sve izvedene vrijednosti (kao FSCG buildFields)
 function parseTicket(t) {
     const { red, sjediste } = splitSeatId(t.seatId);
     const { tribina, sektor } = parseSectionLabel(t.sectionLabel, t.category);
     const { home, away, full: eventFull } = splitEventName(t.eventName);
+    const { prefix: eventPrefix, teams: eventTeams } = splitEventNameParts(eventFull);
     return {
         eventNameFull: eventFull,
+        eventPrefix,
+        eventTeams,
         homeTeam: home,
         awayTeam: away,
         venue:    (t.Lokacija || '').toString().toUpperCase(),
@@ -638,6 +652,8 @@ function buildDefaultFields(parsed) {
         { id: 'stub-sector-row', label: 'Stub: Sektor/Red',  text: `SEKTOR: ${p.sektor}  RED: ${p.red}`,                   left: 150, top: 36,   fontSize: 9,    fontWeight: 700, color: '#000000' },
         { id: 'stub-seat-big',   label: 'Stub: Sjedište',    text: `SJEDIŠTE: ${p.sjediste}`,                              left: 150, top: 40,   fontSize: 10,   fontWeight: 700, color: '#000000' },
         { id: 'stub-home',     label: 'Stub: Naziv eventa', text: p.eventNameFull,                                       left: 163, top: 45,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
+        { id: 'stub-event-prefix', label: 'Stub: Naziv (1. red)', text: p.eventPrefix,                                  left: 163, top: 44,   fontSize: 6.5,  fontWeight: 600, color: '#000000', width: 42, textAlign: 'left' },
+        { id: 'stub-event-teams',  label: 'Stub: Timovi (2. red)', text: p.eventTeams,                                  left: 163, top: 48,   fontSize: 7.5,  fontWeight: 700, color: '#000000', width: 42, textAlign: 'left' },
         { id: 'stub-away',     label: 'Stub: Gosti',       text: p.awayTeam,                                             left: 163, top: 52,   fontSize: 7.5,  fontWeight: 700, color: '#000000' },
         { id: 'stub-venue',    label: 'Stub: Stadion',     text: p.venue,                                                left: 163, top: 59,   fontSize: 5.5,  fontWeight: 600, color: '#000000' },
         { id: 'stub-datetime', label: 'Stub: Datum',       text: `${p.dateStr}  ${p.timeStr}`,                           left: 163, top: 62.5, fontSize: 5.5,  fontWeight: 400, color: '#000000' },
@@ -673,6 +689,8 @@ function fieldTextFromTicket(id, parsed) {
         case 'stub-pdv':      return parsed.priceLabel ? 'PDV 15,00% URAČUNAT U CIJENU' : '';
         case 'eventname':
         case 'stub-home':     return parsed.eventNameFull;
+        case 'stub-event-prefix': return parsed.eventPrefix;
+        case 'stub-event-teams': return parsed.eventTeams;
         case 'stub-away':     return parsed.awayTeam;
         case 'stub-venue':    return parsed.venue;
         case 'stub-datetime': return `${parsed.dateStr}  ${parsed.timeStr}`;
