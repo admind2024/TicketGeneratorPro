@@ -52,10 +52,15 @@
         .preview-box p { color: #4b5563; font-size: 13px; }
 
         /* Double-sided preview */
-        .preview-dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .preview-dual { display: flex; flex-direction: column; gap: 12px; }
         .preview-side { background: #13151d; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #2a2d3a; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .preview-side-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .preview-side canvas { max-width: 100%; max-height: 200px; border-radius: 4px; }
+        .preview-side canvas { max-width: 100%; border-radius: 4px; }
+        /* Prednja: velika, zauzima cijelu širinu left-col */
+        #dPreviewFront { min-height: 280px; padding: 16px; }
+        /* Zadnja: manji thumbnail centriran (samo pregled) */
+        #dPreviewBack { max-width: 360px; align-self: center; }
+        #dPreviewBack canvas { max-height: 160px; }
         .preview-side p { color: #4b5563; font-size: 12px; }
 
         /* Bleed info */
@@ -1567,7 +1572,7 @@ async function updatePreviewD() {
             const parsed = parseTicket(tickets2[0] || {});
 
             frontBox.innerHTML = '<div class="preview-side-label">Prednja strana (drag polja)</div>';
-            const maxW = Math.min(frontBox.clientWidth || 400, 500);
+            const maxW = Math.min(frontBox.clientWidth - 32 || 700, 900);
             const wrapH = Math.round(maxW * tab2CardSize.h / tab2CardSize.w);
 
             const wrap = document.createElement('div');
