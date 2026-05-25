@@ -510,6 +510,7 @@ function parseCSV(text) {
     const pri  = find('price','cijena');
     const vai  = find('Valuta','valuta','currency');
     const cni  = find('customerName','customer_name','customername','ime');
+    const enti = find('entrance','ulaz');
     const result = [];
     for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
@@ -532,6 +533,7 @@ function parseCSV(text) {
             price:        get(pri),
             Valuta:       get(vai),
             customerName: get(cni),
+            entrance:     get(enti),
         });
     }
     return result;
