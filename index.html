@@ -468,13 +468,17 @@
                         <input type="number" id="dPerPage" value="1" min="1" max="20" step="1" oninput="onPerPageChangeD()">
                         <span id="dPerPageHint" style="font-size:10px;color:#6b7280;margin-left:4px"></span>
                     </div>
+                    <div class="opt-row" id="dPaperAutoRow" style="display:none">
+                        <input type="checkbox" id="dPaperAuto" checked onchange="onPaperAutoToggleD()">
+                        <label for="dPaperAuto" style="font-size:11px;cursor:pointer">Auto papir (= karta × broj karata)</label>
+                    </div>
                     <div class="opt-row" id="dPaperRow" style="display:none">
-                        <label for="dPaperW">Stranica</label>
-                        <input type="number" id="dPaperW" value="210" min="50" max="1000" step="0.5" oninput="onPaperChangeD()" style="width:65px">
+                        <label for="dPaperW">Papir</label>
+                        <input type="number" id="dPaperW" value="205" min="50" max="1000" step="0.5" oninput="onPaperChangeD()" style="width:65px" disabled>
                         <span style="font-size:10px;color:#6b7280">×</span>
-                        <input type="number" id="dPaperH" value="297" min="50" max="1500" step="0.5" oninput="onPaperChangeD()" style="width:65px">
+                        <input type="number" id="dPaperH" value="328" min="50" max="1500" step="0.5" oninput="onPaperChangeD()" style="width:65px" disabled>
                         <span style="font-size:10px;color:#6b7280">mm</span>
-                        <select id="dPaperPreset" onchange="onPaperPresetD(this.value)" style="margin-left:6px;flex:1">
+                        <select id="dPaperPreset" onchange="onPaperPresetD(this.value)" style="margin-left:6px;flex:1" disabled>
                             <option value="">Preset…</option>
                             <option value="210x297">A4 portret</option>
                             <option value="297x210">A4 pejzaž</option>
@@ -1475,20 +1479,28 @@ function maxCardsPerPaperD() {
     return Math.max(1, fit);
 }
 function updateBleedInfoD() {
+    // Prvo recompute auto papir (ako je auto on) — info traka pokazuje aktuelne vrijednosti
+    recomputePaperAutoD();
     const w = tab2CardSize.w, h = tab2CardSize.h, b = tab2BleedMm;
     const ppEl = document.getElementById('dPerPage');
     const pp = ppEl ? (parseInt(ppEl.value) || 1) : 1;
-    const paperW = parseFloat(document.getElementById('dPaperW')?.value) || 210;
-    const paperH = parseFloat(document.getElementById('dPaperH')?.value) || 297;
+    const paperW = parseFloat(document.getElementById('dPaperW')?.value) || w;
+    const paperH = parseFloat(document.getElementById('dPaperH')?.value) || h;
     const gap = parseFloat(document.getElementById('dCardGap')?.value) || 0;
+    const auto = isPaperAutoD();
     let info;
     if (pp > 1) {
         const maxFit = maxCardsPerPaperD();
-        const note = pp > maxFit ? ` ⚠ stane bez deformacije: ${maxFit} (više = skaliranje da stanu)` : '';
+        const deformNote = pp > maxFit ? ` ⚠ stane bez deformacije: ${maxFit} (više = skaliranje)` : '';
+        const sideGap = Math.abs(paperW - w);
+        const widthNote = (!auto && sideGap > 0.5)
+            ? ` &nbsp;|&nbsp; ⚠ bijelo sa strana ${(sideGap/2).toFixed(1)}mm (uključi "Auto papir")`
+            : '';
+        const paperLbl = auto ? 'Papir (auto)' : 'Papir';
         info = `<strong>Karta:</strong> ${w}×${h} mm &nbsp;|&nbsp; ` +
-               `<strong>Stranica:</strong> ${paperW}×${paperH} mm &nbsp;|&nbsp; ` +
+               `<strong>${paperLbl}:</strong> ${paperW}×${paperH} mm &nbsp;|&nbsp; ` +
                `<strong>Razmak:</strong> ${gap} mm &nbsp;|&nbsp; ` +
-               `${pp} karata po stranici${note}`;
+               `${pp} karata${deformNote}${widthNote}`;
     } else {
         info = `<strong>Karta:</strong> ${w}×${h} mm &nbsp;|&nbsp; ` +
                `<strong>Prepust:</strong> ${b}mm sa svih strana &nbsp;|&nbsp; ` +
@@ -1510,16 +1522,49 @@ function updateBleedInfoD() {
     }
     // Vidljivost custom papir + razmak polja (samo kada perPage > 1)
     const showMulti = pp > 1 ? '' : 'none';
+    const paperAutoRow = document.getElementById('dPaperAutoRow');
     const paperRow = document.getElementById('dPaperRow');
     const gapRow = document.getElementById('dCardGapRow');
+    if (paperAutoRow) paperAutoRow.style.display = showMulti;
     if (paperRow) paperRow.style.display = showMulti;
     if (gapRow)   gapRow.style.display   = showMulti;
 }
+function isPaperAutoD() {
+    const el = document.getElementById('dPaperAuto');
+    return el ? el.checked : true;
+}
+function recomputePaperAutoD() {
+    if (!isPaperAutoD()) return;
+    const tpp = Math.max(1, parseInt(document.getElementById('dPerPage').value) || 1);
+    const gap = Math.max(0, parseFloat(document.getElementById('dCardGap')?.value) || 0);
+    const w = tab2CardSize.w;
+    const h = +(tab2CardSize.h * tpp + (tpp-1)*gap).toFixed(2);
+    const wEl = document.getElementById('dPaperW');
+    const hEl = document.getElementById('dPaperH');
+    if (wEl) wEl.value = w;
+    if (hEl) hEl.value = h;
+}
+function onPaperAutoToggleD() {
+    const auto = isPaperAutoD();
+    document.getElementById('dPaperW').disabled = auto;
+    document.getElementById('dPaperH').disabled = auto;
+    document.getElementById('dPaperPreset').disabled = auto;
+    if (auto) recomputePaperAutoD();
+    updateBleedInfoD();
+    saveLocalD();
+}
 function onPerPageChangeD() {
+    recomputePaperAutoD();
     updateBleedInfoD();
     saveLocalD();
 }
 function onPaperChangeD() {
+    // Korisnik je ručno promijenio papir → izađi iz auto moda
+    const cb = document.getElementById('dPaperAuto');
+    if (cb && cb.checked) cb.checked = false;
+    document.getElementById('dPaperW').disabled = false;
+    document.getElementById('dPaperH').disabled = false;
+    document.getElementById('dPaperPreset').disabled = false;
     updateBleedInfoD();
     saveLocalD();
 }
@@ -1528,6 +1573,7 @@ function onPaperPresetD(val) {
     const [w, h] = val.split('x').map(Number);
     document.getElementById('dPaperW').value = w;
     document.getElementById('dPaperH').value = h;
+    document.getElementById('dPaperPreset').value = '';
     onPaperChangeD();
 }
 function onCardSizeChangeD() {
@@ -1691,6 +1737,7 @@ function saveLocalD() {
             paperW:  num('dPaperW', 210),
             paperH:  num('dPaperH', 297),
             cardGap: num('dCardGap', 0),
+            paperAuto: isPaperAutoD(),
         };
         localStorage.setItem(TAB2_STORAGE_KEY, JSON.stringify(data));
     } catch(e) { /* ignore */ }
@@ -1725,6 +1772,15 @@ function loadLocalD() {
         }
         if (typeof data.cardGap === 'number') {
             const el = document.getElementById('dCardGap'); if (el) el.value = data.cardGap;
+        }
+        if (typeof data.paperAuto === 'boolean') {
+            const cb = document.getElementById('dPaperAuto');
+            if (cb) {
+                cb.checked = data.paperAuto;
+                document.getElementById('dPaperW').disabled = data.paperAuto;
+                document.getElementById('dPaperH').disabled = data.paperAuto;
+                document.getElementById('dPaperPreset').disabled = data.paperAuto;
+            }
         }
     } catch(e) { /* ignore */ }
 }
