@@ -241,6 +241,7 @@
                         <select id="f_align" onchange="onFieldDetailChange('textAlign', this.value)" style="flex:1">
                             <option value="left">Lijevo</option>
                             <option value="center">Centar</option>
+                            <option value="right">Desno</option>
                         </select>
                     </div>
                     <div class="opt-row" id="f_width_row">
@@ -428,6 +429,7 @@
                         <select id="df_align" onchange="onFieldDetailChangeD('textAlign', this.value)" style="flex:1">
                             <option value="left">Lijevo</option>
                             <option value="center">Centar</option>
+                            <option value="right">Desno</option>
                         </select>
                     </div>
                     <div class="opt-row" id="df_width_row">
@@ -463,8 +465,27 @@
                     </div>
                     <div class="opt-row">
                         <label for="dPerPage">Karata po stranici</label>
-                        <input type="number" id="dPerPage" value="1" min="1" max="12" step="1" oninput="onPerPageChangeD()">
-                        <span style="font-size:10px;color:#6b7280;margin-left:4px">1 = svaka karta zasebna stranica; >1 = A4 portret skalirano</span>
+                        <input type="number" id="dPerPage" value="1" min="1" max="20" step="1" oninput="onPerPageChangeD()">
+                        <span id="dPerPageHint" style="font-size:10px;color:#6b7280;margin-left:4px"></span>
+                    </div>
+                    <div class="opt-row" id="dPaperRow" style="display:none">
+                        <label for="dPaperW">Stranica</label>
+                        <input type="number" id="dPaperW" value="210" min="50" max="1000" step="0.5" oninput="onPaperChangeD()" style="width:65px">
+                        <span style="font-size:10px;color:#6b7280">×</span>
+                        <input type="number" id="dPaperH" value="297" min="50" max="1500" step="0.5" oninput="onPaperChangeD()" style="width:65px">
+                        <span style="font-size:10px;color:#6b7280">mm</span>
+                        <select id="dPaperPreset" onchange="onPaperPresetD(this.value)" style="margin-left:6px;flex:1">
+                            <option value="">Preset…</option>
+                            <option value="210x297">A4 portret</option>
+                            <option value="297x210">A4 pejzaž</option>
+                            <option value="297x420">A3 portret</option>
+                            <option value="420x297">A3 pejzaž</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="dCardGapRow" style="display:none">
+                        <label for="dCardGap">Razmak između karata</label>
+                        <input type="number" id="dCardGap" value="0" min="0" max="20" step="0.5" oninput="onPerPageChangeD()" style="width:65px">
+                        <span style="font-size:10px;color:#6b7280">mm</span>
                     </div>
                     <div class="opt-row">
                         <label for="dPrintOrder">Raspored stranica</label>
@@ -817,7 +838,8 @@ async function renderTicketFscg(tplImg, ticket, fields, opts) {
         ctx.font = `${f.fontWeight || 400} ${fontPx}px ${family}`;
         ctx.fillStyle = f.color || '#000';
         ctx.textBaseline = 'top';
-        ctx.textAlign = f.textAlign === 'center' ? 'center' : 'left';
+        ctx.textAlign = f.textAlign === 'center' ? 'center' :
+                        (f.textAlign === 'right'  ? 'right'  : 'left');
 
         // Podrška za \n (eksplicitni line break) + opcionalni word-wrap unutar width-a
         const segments = text.split('\n');
@@ -827,12 +849,14 @@ async function renderTicketFscg(tplImg, ticket, fields, opts) {
             if (f.width) {
                 const maxLineW = f.width * pxPerMmX;
                 const wrapped = wrapText(ctx, seg, maxLineW);
-                const drawX = f.textAlign === 'center' ? x + maxLineW / 2 : x;
+                const drawX = f.textAlign === 'center' ? x + maxLineW / 2 :
+                              (f.textAlign === 'right'  ? x + maxLineW : x);
                 for (const line of wrapped) {
                     ctx.fillText(line, drawX, y + yOff);
                     yOff += lineH;
                 }
             } else {
+                // Bez width-a: za right-align, x je desni edge teksta (canvas textAlign='right' to radi).
                 ctx.fillText(seg, x, y + yOff);
                 yOff += lineH;
             }
@@ -1171,7 +1195,8 @@ async function updatePreview() {
             d.dataset.id = f.id;
             // pre-line cuva \n kao line break (i u width=auto i sa wrap-om)
             const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:pre-line` : 'white-space:pre-line';
-            const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
+            const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' :
+                          (!f.width && f.textAlign==='right')  ? 'transform:translateX(-100%);' : '';
             d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
             d.textContent = text;
             d.onmousedown = (ev) => onFieldMouseDown(ev, f.id);
@@ -1402,6 +1427,16 @@ function handleFront(file) {
         frontImgRef = await loadImg(frontDataURL);
         dFrontBox.classList.add('done');
         dFrontBox.querySelector('p').textContent = file.name;
+        // Ako je cardSize na default 205×82, podesi visinu prema aspect ratiou slike
+        // (samo prvi put — ne dira ako je user već prilagodio dimenzije)
+        if (tab2CardSize.w === DEFAULT_CARD_WIDTH_MM && tab2CardSize.h === DEFAULT_CARD_HEIGHT_MM) {
+            const asp = (frontImgRef.naturalWidth||frontImgRef.width) / (frontImgRef.naturalHeight||frontImgRef.height);
+            const newH = Math.round(tab2CardSize.w / asp * 10) / 10;
+            tab2CardSize = { w: tab2CardSize.w, h: newH };
+            const ch = document.getElementById('dCardH'); if (ch) ch.value = newH;
+            saveLocalD();
+        }
+        updateBleedInfoD();
         checkReadyD();
         updatePreviewD();
     };
@@ -1429,15 +1464,31 @@ function checkReadyD() {
 }
 
 // ── Dimenzije + prepust + globalni font ─────────────────────────────────
+// Maks karata koje stanu na stranicu bez deformacije: koliko visina karte
+// stane u visinu papira (uz mali pad za sigurnost). Ne dozvoljava manje od 1.
+function maxCardsPerPaperD() {
+    const ph = parseFloat(document.getElementById('dPaperH')?.value) || 297;
+    const ch = tab2CardSize.h || 82;
+    const gap = parseFloat(document.getElementById('dCardGap')?.value) || 0;
+    if (ch <= 0) return 1;
+    const fit = Math.floor((ph + gap) / (ch + gap));
+    return Math.max(1, fit);
+}
 function updateBleedInfoD() {
     const w = tab2CardSize.w, h = tab2CardSize.h, b = tab2BleedMm;
     const ppEl = document.getElementById('dPerPage');
     const pp = ppEl ? (parseInt(ppEl.value) || 1) : 1;
+    const paperW = parseFloat(document.getElementById('dPaperW')?.value) || 210;
+    const paperH = parseFloat(document.getElementById('dPaperH')?.value) || 297;
+    const gap = parseFloat(document.getElementById('dCardGap')?.value) || 0;
     let info;
     if (pp > 1) {
+        const maxFit = maxCardsPerPaperD();
+        const note = pp > maxFit ? ` ⚠ stane bez deformacije: ${maxFit} (više = skaliranje da stanu)` : '';
         info = `<strong>Karta:</strong> ${w}×${h} mm &nbsp;|&nbsp; ` +
-               `<strong>Stranica PDF-a:</strong> A4 portret (210×297 mm) &nbsp;|&nbsp; ` +
-               `${pp} karata po stranici (skalirano da stane)`;
+               `<strong>Stranica:</strong> ${paperW}×${paperH} mm &nbsp;|&nbsp; ` +
+               `<strong>Razmak:</strong> ${gap} mm &nbsp;|&nbsp; ` +
+               `${pp} karata po stranici${note}`;
     } else {
         info = `<strong>Karta:</strong> ${w}×${h} mm &nbsp;|&nbsp; ` +
                `<strong>Prepust:</strong> ${b}mm sa svih strana &nbsp;|&nbsp; ` +
@@ -1445,10 +1496,39 @@ function updateBleedInfoD() {
                `Jedna karta po stranici`;
     }
     document.getElementById('dBleedInfo').innerHTML = info;
+    // Hint pored input-a + dinamičan max (auto preporuka po dimenziji karte)
+    const hint = document.getElementById('dPerPageHint');
+    const ppInput = document.getElementById('dPerPage');
+    if (ppInput) {
+        const maxFit = maxCardsPerPaperD();
+        ppInput.max = Math.max(maxFit, 20);
+        if (hint) {
+            hint.textContent = pp === 1
+                ? '1 = svaka karta na svojoj stranici'
+                : `stane bez deformacije do: ${maxFit}`;
+        }
+    }
+    // Vidljivost custom papir + razmak polja (samo kada perPage > 1)
+    const showMulti = pp > 1 ? '' : 'none';
+    const paperRow = document.getElementById('dPaperRow');
+    const gapRow = document.getElementById('dCardGapRow');
+    if (paperRow) paperRow.style.display = showMulti;
+    if (gapRow)   gapRow.style.display   = showMulti;
 }
 function onPerPageChangeD() {
     updateBleedInfoD();
     saveLocalD();
+}
+function onPaperChangeD() {
+    updateBleedInfoD();
+    saveLocalD();
+}
+function onPaperPresetD(val) {
+    if (!val) return;
+    const [w, h] = val.split('x').map(Number);
+    document.getElementById('dPaperW').value = w;
+    document.getElementById('dPaperH').value = h;
+    onPaperChangeD();
 }
 function onCardSizeChangeD() {
     const w = Math.max(10, Number(document.getElementById('dCardW').value) || DEFAULT_CARD_WIDTH_MM);
@@ -1587,6 +1667,9 @@ function SD() {
         printOrder: document.getElementById('dPrintOrder').value,
         cropMarks: document.getElementById('dCropMarks').checked,
         perPage: Math.max(1, parseInt(document.getElementById('dPerPage').value) || 1),
+        paperW:  Math.max(50, parseFloat(document.getElementById('dPaperW').value) || 210),
+        paperH:  Math.max(50, parseFloat(document.getElementById('dPaperH').value) || 297),
+        cardGap: Math.max(0,  parseFloat(document.getElementById('dCardGap').value) || 0),
     };
 }
 function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2 = setTimeout(updatePreviewD, 150); }
@@ -1594,13 +1677,20 @@ function schedPreviewD(){ clearTimeout(debounceTimer2); debounceTimer2 = setTime
 // ── localStorage persistencija ──────────────────────────────────────────
 function saveLocalD() {
     try {
-        const ppEl = document.getElementById('dPerPage');
+        const num = (id, def) => {
+            const el = document.getElementById(id);
+            const v = el ? parseFloat(el.value) : NaN;
+            return Number.isFinite(v) ? v : def;
+        };
         const data = {
             fields: tab2Fields,
             cardSize: tab2CardSize,
             bleed: tab2BleedMm,
             globalFont: tab2GlobalFont,
-            perPage: ppEl ? (parseInt(ppEl.value) || 1) : 1,
+            perPage: Math.max(1, parseInt(document.getElementById('dPerPage')?.value) || 1),
+            paperW:  num('dPaperW', 210),
+            paperH:  num('dPaperH', 297),
+            cardGap: num('dCardGap', 0),
         };
         localStorage.setItem(TAB2_STORAGE_KEY, JSON.stringify(data));
     } catch(e) { /* ignore */ }
@@ -1626,6 +1716,15 @@ function loadLocalD() {
         }
         if (typeof data.perPage === 'number') {
             const pp = document.getElementById('dPerPage'); if (pp) pp.value = data.perPage;
+        }
+        if (typeof data.paperW === 'number') {
+            const el = document.getElementById('dPaperW'); if (el) el.value = data.paperW;
+        }
+        if (typeof data.paperH === 'number') {
+            const el = document.getElementById('dPaperH'); if (el) el.value = data.paperH;
+        }
+        if (typeof data.cardGap === 'number') {
+            const el = document.getElementById('dCardGap'); if (el) el.value = data.cardGap;
         }
     } catch(e) { /* ignore */ }
 }
@@ -1729,7 +1828,8 @@ async function updatePreviewD() {
                 d.dataset.id = f.id;
                 // pre-line cuva \n kao line break (i u width=auto i sa wrap-om)
             const wStyle = f.width ? `width:${f.width*pxPerMm}px;text-align:${f.textAlign||'left'};white-space:pre-line` : 'white-space:pre-line';
-                const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' : '';
+                const xfrm  = (!f.width && f.textAlign==='center') ? 'transform:translateX(-50%);' :
+                              (!f.width && f.textAlign==='right')  ? 'transform:translateX(-100%);' : '';
                 d.style.cssText = `position:absolute;left:${x}px;top:${y}px;font-size:${fontPx}px;font-weight:${f.fontWeight||400};font-family:${family};color:${f.color||'#000'};line-height:1;${wStyle};${xfrm}outline:${isSel?'2px solid #ff0':'1px dashed rgba(255,0,0,0.25)'};background:${isSel?'rgba(255,255,0,0.15)':'transparent'};cursor:grab;z-index:${isSel?100:10};padding:0`;
                 d.textContent = text;
                 d.onmousedown = (ev) => onFieldMouseDownD(ev, f.id);
@@ -1842,24 +1942,27 @@ async function generateDouble() {
 
     try {
 
-    // ── A4 portret, više karata u koloni (skalirano da stane) ───────────
+    // ── Custom papir, više karata u koloni (skalirano da stane) ─────────
     if (s.perPage > 1) {
-        const pw = 210, ph = 297, mg = 7;
+        const pw = s.paperW, ph = s.paperH;
+        const gap = s.cardGap;          // razmak između karata; ivična margina = 0 (bez bijelih okvira)
         const tpp = s.perPage;
-        const tw = pw - 2*mg;
-        const th = (ph - (tpp+1)*mg) / tpp;
+        const tw = pw;
+        const th = (ph - (tpp-1)*gap) / tpp;
         const slotAsp = tw/th;
         const backJpeg = backImg ? await canvasToJpeg(imgToCanvas(backImg)) : null;
         const backAsp  = backImg ? (backImg.naturalWidth||backImg.width)/(backImg.naturalHeight||backImg.height) : null;
         const pagesTotal = Math.ceil(total/tpp);
 
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+        const orient = pw >= ph ? 'landscape' : 'portrait';
+        const doc = new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true });
 
         function placeOnSlot(data, asp, slot) {
-            const yPos = mg + slot*(th + mg);
+            const yPos = slot*(th + gap);
             let dw, dh, dx, dy;
-            if (asp > slotAsp) { dw = tw; dh = tw/asp; dx = mg; dy = yPos + (th - dh)/2; }
-            else { dh = th; dw = th*asp; dx = mg + (tw - dw)/2; dy = yPos; }
+            // Skaliraj sa očuvanjem aspect ratio-a; karte centrirane unutar slot-a
+            if (asp > slotAsp) { dw = tw; dh = tw/asp; dx = 0;            dy = yPos + (th - dh)/2; }
+            else               { dh = th; dw = th*asp; dx = (tw - dw)/2;  dy = yPos; }
             doc.addImage(data, 'JPEG', dx, dy, dw, dh);
         }
         async function addFrontPage(startIdx) {
@@ -1879,22 +1982,22 @@ async function generateDouble() {
 
         if (s.printOrder === 'interleaved') {
             for (let p = 0; p < pagesTotal; p++) {
-                if (p > 0) doc.addPage();
+                if (p > 0) doc.addPage([pw, ph], orient);
                 const n = await addFrontPage(p*tpp);
-                doc.addPage();
+                doc.addPage([pw, ph], orient);
                 addBackPage(n);
                 showProgD((p+1)/pagesTotal*100, 'Stranica '+(p+1)+'/'+pagesTotal);
                 await new Promise(r => setTimeout(r, 0));
             }
         } else {
             for (let p = 0; p < pagesTotal; p++) {
-                if (p > 0) doc.addPage();
+                if (p > 0) doc.addPage([pw, ph], orient);
                 await addFrontPage(p*tpp);
                 showProgD((p+1)/(pagesTotal*2)*100, 'Prednje: '+(p+1)+'/'+pagesTotal);
                 await new Promise(r => setTimeout(r, 0));
             }
             for (let p = 0; p < pagesTotal; p++) {
-                doc.addPage();
+                doc.addPage([pw, ph], orient);
                 const n = Math.min(tpp, total - p*tpp);
                 addBackPage(n);
                 showProgD(50+(p+1)/(pagesTotal*2)*100, 'Zadnje: '+(p+1)+'/'+pagesTotal);
@@ -1905,7 +2008,7 @@ async function generateDouble() {
         const pages = backImg || s.printOrder === 'interleaved' ? pagesTotal * 2 : pagesTotal;
         hideProgD();
         offerPdf([{name:'tickets-dvostrano.pdf', blob:buildPdfBlob(doc)}],
-            'PDF generisan! ' + total + ' karata, ' + pages + ' A4 stranica (po '+tpp+' karata).',
+            `PDF generisan! ${total} karata, ${pages} stranica ${pw}×${ph}mm (po ${tpp} karata).`,
             'dStatusBox');
         return;
     }
