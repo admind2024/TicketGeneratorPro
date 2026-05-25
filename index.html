@@ -503,8 +503,9 @@
                     <div class="opt-row"><input type="checkbox" id="dReorderCut" onchange="onReorderCutToggleD()"><label for="dReorderCut">Numeracija za rezanje na nož (sekvencijalni špilovi)</label></div>
                     <div class="opt-row" id="dPagesPerDeckRow" style="display:none">
                         <label for="dPagesPerDeck">Stranica po špilu</label>
-                        <input type="number" id="dPagesPerDeck" value="100" min="1" max="1000" step="1" style="width:80px">
-                        <span style="font-size:10px;color:#6b7280">npr. 100 stranica × 4 karte = špil od 400 karata</span>
+                        <input type="number" id="dPagesPerDeck" placeholder="auto" min="1" max="2000" step="1" style="width:80px">
+                        <button class="btn btn-secondary" style="font-size:10px;padding:4px 8px" onclick="autoFillPagesPerDeckD()">Auto</button>
+                        <span style="font-size:10px;color:#6b7280">prazno = svi u 1 grupu (=ceil(broj_karata/karte_po_strani))</span>
                     </div>
                 </div>
                 <!-- Opseg za generisanje (za nastavak prekinute štampe) -->
@@ -1628,6 +1629,13 @@ function onReorderCutToggleD() {
     document.getElementById('dPagesPerDeckRow').style.display = on ? '' : 'none';
     saveLocalD();
 }
+function autoFillPagesPerDeckD() {
+    const tix = rangeFilteredTicketsD();
+    const tpp = Math.max(1, parseInt(document.getElementById('dPerPage')?.value) || 4);
+    const ppd = Math.ceil(tix.length / tpp);
+    document.getElementById('dPagesPerDeck').value = ppd;
+    saveLocalD();
+}
 // Reorder algoritam: redoslijed karata tako da nakon rezanja na nož svaka
 // pozicija (1..tpp) na stranici daje sekvencijalni špil.
 // Primjer: 400 karata, tpp=4, ppd=100 → špil 1 = karte 1-100, špil 2 = 101-200, itd.
@@ -1793,7 +1801,8 @@ function SD() {
         cropMarks: document.getElementById('dCropMarks').checked,
         optimize:  document.getElementById('dOptimize')?.checked ?? true,
         reorderCut: document.getElementById('dReorderCut')?.checked ?? false,
-        pagesPerDeck: Math.max(1, parseInt(document.getElementById('dPagesPerDeck')?.value) || 100),
+        // pagesPerDeck: 0 znači "auto" (svi karte u 1 grupu špilova) — preračunava se u generateDouble
+        pagesPerDeck: Math.max(0, parseInt(document.getElementById('dPagesPerDeck')?.value) || 0),
         perPage: Math.max(1, parseInt(document.getElementById('dPerPage').value) || 1),
         paperW:  Math.max(50, parseFloat(document.getElementById('dPaperW').value) || 210),
         paperH:  Math.max(50, parseFloat(document.getElementById('dPaperH').value) || 297),
@@ -2127,7 +2136,9 @@ async function generateDouble() {
     if (!ticketsToGen.length) { showMsgD('Opseg karata je prazan. Resetuj opseg ili učitaj CSV.', 'error'); return; }
     // Reorder za rezanje na nož (samo kad perPage > 1 — inače nema smisla)
     if (s.reorderCut && s.perPage > 1) {
-        ticketsToGen = reorderForCut(ticketsToGen, s.pagesPerDeck, s.perPage);
+        // ppd=0 → auto = svih karata u 1 grupu špilova (ceil(total/tpp))
+        const ppd = s.pagesPerDeck > 0 ? s.pagesPerDeck : Math.ceil(ticketsToGen.length / s.perPage);
+        ticketsToGen = reorderForCut(ticketsToGen, ppd, s.perPage);
     }
     const total = ticketsToGen.length;
     const rangeFrom = (parseInt(document.getElementById('dRangeFrom')?.value) || 1);
