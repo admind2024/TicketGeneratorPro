@@ -178,9 +178,9 @@
                     </div>
                     <div class="opt-row">
                         <label for="cardW">Širina</label>
-                        <input type="number" id="cardW" value="205" min="10" max="297" step="0.5" oninput="onCardSizeChange()">
+                        <input type="number" id="cardW" value="205" min="10" max="1000" step="0.5" oninput="onCardSizeChange()">
                         <label for="cardH" style="margin-left:8px">Visina</label>
-                        <input type="number" id="cardH" value="82" min="10" max="297" step="0.5" oninput="onCardSizeChange()">
+                        <input type="number" id="cardH" value="82" min="10" max="1000" step="0.5" oninput="onCardSizeChange()">
                     </div>
                     <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="autoSizeFromImage()">Auto iz slike (aspect ratio)</button>
                 </div>
@@ -208,6 +208,7 @@
                     </div>
                     <div id="fieldList" style="display:flex;flex-direction:column;gap:1px;max-height:280px;overflow-y:auto"></div>
                     <button class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:11px;padding:6px" onclick="addCustomField()">+ Dodaj custom tekst</button>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="addCounterField()">+ Dodaj redni broj (brojač)</button>
                 </div>
                 <!-- Detalji izabranog polja -->
                 <div class="settings-card" id="fieldDetailCard" style="display:none">
@@ -264,6 +265,16 @@
                     <div class="opt-row" id="f_text_row">
                         <label style="min-width:60px">Tekst</label>
                         <input type="text" id="f_text" oninput="onFieldDetailChange('text', this.value)" style="flex:1">
+                    </div>
+                    <div class="opt-row" id="f_counter_row" style="display:none">
+                        <label style="min-width:60px">Od broja</label>
+                        <input type="number" id="f_cStart" step="1" oninput="onFieldDetailChange('counterStart', this.value)" style="width:70px">
+                        <label style="margin-left:6px;min-width:42px">Cifara</label>
+                        <input type="number" id="f_cPad" step="1" min="0" max="9" oninput="onFieldDetailChange('counterPad', this.value)" style="width:50px" title="Vodeće nule (0 = bez)">
+                    </div>
+                    <div class="opt-row" id="f_counter_row2" style="display:none">
+                        <input type="checkbox" id="f_cPrint" onchange="onFieldDetailChange('counterByPrint', this.checked)">
+                        <label for="f_cPrint" style="font-size:11px;cursor:pointer" title="Uključeno: broj prati poziciju na listu nakon preuređivanja za rezanje. Isključeno: broj prati red u CSV-u.">Prati redoslijed štampe (rezanje)</label>
                     </div>
                     <div class="opt-row">
                         <label style="min-width:60px">Boja</label>
@@ -362,9 +373,9 @@
                     </div>
                     <div class="opt-row">
                         <label for="dCardW">Širina</label>
-                        <input type="number" id="dCardW" value="205" min="10" max="297" step="0.5" oninput="onCardSizeChangeD()">
+                        <input type="number" id="dCardW" value="205" min="10" max="1000" step="0.5" oninput="onCardSizeChangeD()">
                         <label for="dCardH" style="margin-left:8px">Visina</label>
-                        <input type="number" id="dCardH" value="82" min="10" max="297" step="0.5" oninput="onCardSizeChangeD()">
+                        <input type="number" id="dCardH" value="82" min="10" max="1000" step="0.5" oninput="onCardSizeChangeD()">
                     </div>
                     <div class="opt-row">
                         <label for="dBleed">Prepust (mm)</label>
@@ -396,6 +407,7 @@
                     </div>
                     <div id="dFieldList" style="display:flex;flex-direction:column;gap:1px;max-height:280px;overflow-y:auto"></div>
                     <button class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:11px;padding:6px" onclick="addCustomFieldD()">+ Dodaj custom tekst</button>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="addCounterFieldD()">+ Dodaj redni broj (brojač)</button>
                 </div>
                 <!-- Detalji izabranog polja -->
                 <div class="settings-card" id="dFieldDetailCard" style="display:none">
@@ -452,6 +464,16 @@
                     <div class="opt-row" id="df_text_row">
                         <label style="min-width:60px">Tekst</label>
                         <input type="text" id="df_text" oninput="onFieldDetailChangeD('text', this.value)" style="flex:1">
+                    </div>
+                    <div class="opt-row" id="df_counter_row" style="display:none">
+                        <label style="min-width:60px">Od broja</label>
+                        <input type="number" id="df_cStart" step="1" oninput="onFieldDetailChangeD('counterStart', this.value)" style="width:70px">
+                        <label style="margin-left:6px;min-width:42px">Cifara</label>
+                        <input type="number" id="df_cPad" step="1" min="0" max="9" oninput="onFieldDetailChangeD('counterPad', this.value)" style="width:50px" title="Vodeće nule (0 = bez)">
+                    </div>
+                    <div class="opt-row" id="df_counter_row2" style="display:none">
+                        <input type="checkbox" id="df_cPrint" onchange="onFieldDetailChangeD('counterByPrint', this.checked)">
+                        <label for="df_cPrint" style="font-size:11px;cursor:pointer" title="Uključeno: broj prati poziciju na listu nakon preuređivanja za rezanje. Isključeno: broj prati red u CSV-u.">Prati redoslijed štampe (rezanje)</label>
                     </div>
                     <div class="opt-row">
                         <label style="min-width:60px">Boja</label>
@@ -762,6 +784,27 @@ function fieldTextFromTicket(id, parsed) {
     }
 }
 
+// ===== BROJAČ (redni broj karte) =====
+// Redni broj = counterStart + seq (seq je 0-based indeks karte u CSV-u).
+// counterPad = broj cifara za vodeće nule (0 = bez nula).
+function counterText(f, seq) {
+    const start = Number.isFinite(f.counterStart) ? f.counterStart : 1;
+    const val = start + (seq || 0);
+    const pad = parseInt(f.counterPad) || 0;
+    return pad > 0 ? String(val).padStart(pad, '0') : String(val);
+}
+// Jedinstven izvor teksta polja za render i preview.
+// Brojač → redni broj; ostalo → CSV mapper, pa fallback na f.text.
+// seqId = indeks po redu u CSV-u (identitet karte); seqPrint = pozicija u redoslijedu
+// štampe (nakon preuređivanja za rezanje). Brojač bira jedan od njih preko f.counterByPrint.
+function fieldDisplayText(f, parsed, seqId, seqPrint) {
+    if (f.isCounter) return counterText(f, (f.counterByPrint ? seqPrint : seqId) || 0);
+    const mapped = fieldTextFromTicket(f.id, parsed);
+    return (mapped !== null && mapped !== undefined ? mapped : (f.text || '')).toString();
+}
+// px → mm na 300 DPI (štamparski standard): mm = px × 25.4 / 300.
+function pxToMm300(px) { return Math.round(px / 300 * 25.4 * 10) / 10; }
+
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
 let _fontReady=null;
 function ensureFont(){
@@ -857,10 +900,9 @@ async function renderTicketFscg(tplImg, ticket, fields, opts) {
             continue;
         }
 
-        // Tekstualno polje: ako postoji mapper za ovaj id, koristi fresh tekst iz ticketa;
-        // inače padaj na f.text (custom polja, statika kao "PDV ...").
-        const mapped = fieldTextFromTicket(f.id, parsed);
-        const text = (mapped !== null && mapped !== undefined ? mapped : (f.text || '')).toString();
+        // Tekstualno polje: brojač → redni broj; mapper → fresh tekst iz ticketa;
+        // inače f.text (custom polja, statika kao "PDV ...").
+        const text = fieldDisplayText(f, parsed, (ticket && ticket.__seq) || 0, (ticket && ticket.__printSeq) || 0);
         if (!text) continue;
 
         const fontPx = ptToPx(f.fontSize);
@@ -945,6 +987,15 @@ function handleImg(file) {
         templateImgRef = await loadImg(templateDataURL);
         imgBox.classList.add('done');
         imgBox.querySelector('p').textContent = file.name;
+        // Originalne dimenzije slike (px → mm na 300 DPI) postaju default; korisnik ih ručno koriguje.
+        const w = pxToMm300(templateImgRef.naturalWidth || templateImgRef.width);
+        const h = pxToMm300(templateImgRef.naturalHeight || templateImgRef.height);
+        if (w >= 10 && h >= 10) {
+            tab1CardSize = { w, h };
+            document.getElementById('cardW').value = w;
+            document.getElementById('cardH').value = h;
+            saveLocal();
+        }
         checkReady();
         updatePreview();
     };
@@ -1034,7 +1085,15 @@ function updateDetailPanel() {
     document.getElementById('f_align_row').style.display = f.isQr ? 'none' : '';
     document.getElementById('f_width_row').style.display = f.isQr ? 'none' : '';
     document.getElementById('f_font_row').style.display = f.isQr ? 'none' : '';
-    document.getElementById('f_text_row').style.display = f.isQr ? 'none' : '';
+    // Brojač: nema slobodan tekst (auto redni broj) → sakrij tekst, prikaži opcije brojača.
+    document.getElementById('f_text_row').style.display = (f.isQr || f.isCounter) ? 'none' : '';
+    document.getElementById('f_counter_row').style.display = f.isCounter ? '' : 'none';
+    document.getElementById('f_counter_row2').style.display = f.isCounter ? '' : 'none';
+    if (f.isCounter) {
+        document.getElementById('f_cStart').value = Number.isFinite(f.counterStart) ? f.counterStart : 1;
+        document.getElementById('f_cPad').value = f.counterPad || 0;
+        document.getElementById('f_cPrint').checked = !!f.counterByPrint;
+    }
     if (!f.isQr) {
         document.getElementById('f_align').value = f.textAlign || 'left';
         document.getElementById('f_width').value = f.width || '';
@@ -1048,7 +1107,7 @@ function onFieldDetailChange(key, val) {
     if (!f) return;
     if (key === 'width' && (val === '' || val == null)) {
         delete f.width;
-    } else if (['left','top','fontSize','qrSize','width'].includes(key)) {
+    } else if (['left','top','fontSize','qrSize','width','counterStart','counterPad'].includes(key)) {
         f[key] = Number(val);
     } else if (key === 'fontFamily' && !val) {
         delete f.fontFamily;
@@ -1066,6 +1125,17 @@ function addCustomField() {
         id, label: 'Custom tekst', text: 'Novi tekst',
         left: 50, top: 40, fontSize: 10, fontWeight: 400,
         color: '#000000', isCustom: true,
+    });
+    saveLocal();
+    selectField(id);
+}
+function addCounterField() {
+    const id = 'counter-' + Date.now();
+    tab1Fields.push({
+        id, label: 'Redni broj', isCounter: true, isCustom: true,
+        counterStart: 1, counterPad: 0, counterByPrint: false,
+        left: 50, top: 40, fontSize: 12, fontWeight: 700,
+        color: '#000000', textAlign: 'left',
     });
     saveLocal();
     selectField(id);
@@ -1217,7 +1287,7 @@ async function updatePreview() {
                 return;
             }
 
-            const text = (fieldTextFromTicket(f.id, parsed) ?? f.text ?? '').toString();
+            const text = fieldDisplayText(f, parsed, 0, 0);
             if (!text) return;
             const fontPx = f.fontSize * 0.3528 * pxPerMm;
             const family = f.fontFamily || tab1GlobalFont;
@@ -1295,7 +1365,12 @@ async function generate() {
     if (!tickets.length || !templateDataURL) return;
     const s = S(), { jsPDF } = window.jspdf;
     let tix = [...tickets];
+    // Redni broj prati identitet karte (originalni indeks), pa preuređivanje za
+    // sijecenje ne mijenja broj koji se štampa na karti.
+    tix.forEach((t, i) => { if (t) t.__seq = i; });
     if (s.reorder && !s.onePerPage) tix = reorder(tix, s.pagesPerDeck);
+    // Pozicija u redoslijedu štampe (nakon preuređivanja) — za brojač u "prati redoslijed štampe" modu.
+    tix.forEach((t, i) => { if (t) t.__printSeq = i; });
     await ensureFont();
     const tplImg = await loadImg(templateDataURL);
     // optimize=true → cap 1400px (manji fajl). optimize=false → max kvalitet
@@ -1487,13 +1562,13 @@ function handleFront(file) {
         frontImgRef = await loadImg(frontDataURL);
         dFrontBox.classList.add('done');
         dFrontBox.querySelector('p').textContent = file.name;
-        // Ako je cardSize na default 205×82, podesi visinu prema aspect ratiou slike
-        // (samo prvi put — ne dira ako je user već prilagodio dimenzije)
-        if (tab2CardSize.w === DEFAULT_CARD_WIDTH_MM && tab2CardSize.h === DEFAULT_CARD_HEIGHT_MM) {
-            const asp = (frontImgRef.naturalWidth||frontImgRef.width) / (frontImgRef.naturalHeight||frontImgRef.height);
-            const newH = Math.round(tab2CardSize.w / asp * 10) / 10;
-            tab2CardSize = { w: tab2CardSize.w, h: newH };
-            const ch = document.getElementById('dCardH'); if (ch) ch.value = newH;
+        // Originalne dimenzije slike (px → mm na 300 DPI) postaju default; korisnik ih ručno koriguje.
+        const w = pxToMm300(frontImgRef.naturalWidth || frontImgRef.width);
+        const h = pxToMm300(frontImgRef.naturalHeight || frontImgRef.height);
+        if (w >= 10 && h >= 10) {
+            tab2CardSize = { w, h };
+            const cw = document.getElementById('dCardW'); if (cw) cw.value = w;
+            const ch = document.getElementById('dCardH'); if (ch) ch.value = h;
             saveLocalD();
         }
         updateBleedInfoD();
@@ -1744,7 +1819,15 @@ function updateDetailPanelD() {
     document.getElementById('df_align_row').style.display = f.isQr ? 'none' : '';
     document.getElementById('df_width_row').style.display = f.isQr ? 'none' : '';
     document.getElementById('df_font_row').style.display = f.isQr ? 'none' : '';
-    document.getElementById('df_text_row').style.display = f.isQr ? 'none' : '';
+    // Brojač: nema slobodan tekst (auto redni broj) → sakrij tekst, prikaži opcije brojača.
+    document.getElementById('df_text_row').style.display = (f.isQr || f.isCounter) ? 'none' : '';
+    document.getElementById('df_counter_row').style.display = f.isCounter ? '' : 'none';
+    document.getElementById('df_counter_row2').style.display = f.isCounter ? '' : 'none';
+    if (f.isCounter) {
+        document.getElementById('df_cStart').value = Number.isFinite(f.counterStart) ? f.counterStart : 1;
+        document.getElementById('df_cPad').value = f.counterPad || 0;
+        document.getElementById('df_cPrint').checked = !!f.counterByPrint;
+    }
     if (!f.isQr) {
         document.getElementById('df_align').value = f.textAlign || 'left';
         document.getElementById('df_width').value = f.width || '';
@@ -1757,7 +1840,7 @@ function onFieldDetailChangeD(key, val) {
     if (!f) return;
     if (key === 'width' && (val === '' || val == null)) {
         delete f.width;
-    } else if (['left','top','fontSize','qrSize','width'].includes(key)) {
+    } else if (['left','top','fontSize','qrSize','width','counterStart','counterPad'].includes(key)) {
         f[key] = Number(val);
     } else if (key === 'fontFamily' && !val) {
         delete f.fontFamily;
@@ -1774,6 +1857,17 @@ function addCustomFieldD() {
         id, label: 'Custom tekst', text: 'Novi tekst',
         left: 50, top: 40, fontSize: 10, fontWeight: 400,
         color: '#000000', isCustom: true,
+    });
+    saveLocalD();
+    selectFieldD(id);
+}
+function addCounterFieldD() {
+    const id = 'counter-' + Date.now();
+    tab2Fields.push({
+        id, label: 'Redni broj', isCounter: true, isCustom: true,
+        counterStart: 1, counterPad: 0, counterByPrint: false,
+        left: 50, top: 40, fontSize: 12, fontWeight: 700,
+        color: '#000000', textAlign: 'left',
     });
     saveLocalD();
     selectFieldD(id);
@@ -1984,7 +2078,7 @@ async function updatePreviewD() {
                     return;
                 }
 
-                const text = (fieldTextFromTicket(f.id, parsed) ?? f.text ?? '').toString();
+                const text = fieldDisplayText(f, parsed, 0, 0);
                 if (!text) return;
                 const fontPx = f.fontSize * 0.3528 * pxPerMm;
                 const family = f.fontFamily || tab2GlobalFont;
@@ -2131,6 +2225,9 @@ async function generateDouble() {
     if (!tickets2.length || !frontDataURL) return;
     const s = SD();
     const { jsPDF } = window.jspdf;
+    // Redni broj prati identitet karte (indeks u punom CSV-u), pa opseg i preuređivanje
+    // za rezanje ne mijenjaju broj na karti — nastavak štampe zadržava numeraciju.
+    tickets2.forEach((t, i) => { if (t) t.__seq = i; });
     // PRIMENI opseg (od reda – do reda). Ako nije postavljen, generiše sve.
     let ticketsToGen = rangeFilteredTicketsD();
     if (!ticketsToGen.length) { showMsgD('Opseg karata je prazan. Resetuj opseg ili učitaj CSV.', 'error'); return; }
@@ -2140,6 +2237,8 @@ async function generateDouble() {
         const ppd = s.pagesPerDeck > 0 ? s.pagesPerDeck : Math.ceil(ticketsToGen.length / s.perPage);
         ticketsToGen = reorderForCut(ticketsToGen, ppd, s.perPage);
     }
+    // Pozicija u redoslijedu štampe (nakon opsega + preuređivanja) — za brojač u "prati redoslijed štampe" modu.
+    ticketsToGen.forEach((t, i) => { if (t) t.__printSeq = i; });
     const total = ticketsToGen.length;
     const rangeFrom = (parseInt(document.getElementById('dRangeFrom')?.value) || 1);
     const rangeTo   = (parseInt(document.getElementById('dRangeTo')?.value)   || tickets2.length);
