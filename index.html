@@ -853,6 +853,15 @@ function fitFieldsToCard(fields, cardW, cardH) {
     }
 }
 
+// Pozicija novog polja (custom tekst / brojač) — uvijek unutar granica karte,
+// da se odmah vidi. Fiksno top:40 bi na niskom banneru (npr. 140×40mm) palo
+// tačno na/ispod ivice i polje se ne bi prikazalo.
+function newFieldPos(card) {
+    const w = (card && card.w) || DEFAULT_CARD_WIDTH_MM;
+    const h = (card && card.h) || DEFAULT_CARD_HEIGHT_MM;
+    return { left: Math.round(w * 0.4 * 10) / 10, top: Math.round(h * 0.4 * 10) / 10 };
+}
+
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
 let _fontReady=null;
 function ensureFont(){
@@ -1172,9 +1181,10 @@ function onFieldDetailChange(key, val) {
 
 function addCustomField() {
     const id = 'custom-' + Date.now();
+    const p = newFieldPos(tab1CardSize);
     tab1Fields.push({
         id, label: 'Custom tekst', text: 'Novi tekst',
-        left: 50, top: 40, fontSize: 10, fontWeight: 400,
+        left: p.left, top: p.top, fontSize: 10, fontWeight: 400,
         color: '#000000', isCustom: true,
     });
     saveLocal();
@@ -1182,10 +1192,11 @@ function addCustomField() {
 }
 function addCounterField() {
     const id = 'counter-' + Date.now();
+    const p = newFieldPos(tab1CardSize);
     tab1Fields.push({
         id, label: 'Redni broj', isCounter: true, isCustom: true,
         counterStart: 1, counterPad: 0, counterByPrint: false,
-        left: 50, top: 40, fontSize: 12, fontWeight: 700,
+        left: p.left, top: p.top, fontSize: 12, fontWeight: 700,
         color: '#000000', textAlign: 'left',
     });
     saveLocal();
@@ -1909,9 +1920,10 @@ function onFieldDetailChangeD(key, val) {
 }
 function addCustomFieldD() {
     const id = 'custom-' + Date.now();
+    const p = newFieldPos(tab2CardSize);
     tab2Fields.push({
         id, label: 'Custom tekst', text: 'Novi tekst',
-        left: 50, top: 40, fontSize: 10, fontWeight: 400,
+        left: p.left, top: p.top, fontSize: 10, fontWeight: 400,
         color: '#000000', isCustom: true,
     });
     saveLocalD();
@@ -1919,10 +1931,11 @@ function addCustomFieldD() {
 }
 function addCounterFieldD() {
     const id = 'counter-' + Date.now();
+    const p = newFieldPos(tab2CardSize);
     tab2Fields.push({
         id, label: 'Redni broj', isCounter: true, isCustom: true,
         counterStart: 1, counterPad: 0, counterByPrint: false,
-        left: 50, top: 40, fontSize: 12, fontWeight: 700,
+        left: p.left, top: p.top, fontSize: 12, fontWeight: 700,
         color: '#000000', textAlign: 'left',
     });
     saveLocalD();
