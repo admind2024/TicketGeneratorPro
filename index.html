@@ -805,6 +805,54 @@ function fieldDisplayText(f, parsed, seqId, seqPrint) {
 // px → mm na 300 DPI (štamparski standard): mm = px × 25.4 / 300.
 function pxToMm300(px) { return Math.round(px / 300 * 25.4 * 10) / 10; }
 
+// ── Polja unutar granica karte ──────────────────────────────────────────
+// Pozicije polja su u mm i NE skaliraju se same kad se promijeni veličina karte.
+// Default raspored je za 205×82mm; uploaduješ li užu/nižu sliku (npr. banner
+// 140×40mm), sva polja padnu van karte, a overflow:hidden ih sakrije → preview
+// izgleda prazno. Ove dvije funkcije drže raspored unutar nove veličine karte.
+
+// Proporcionalno skalira raspored sa stare na novu veličinu karte (kad znamo obje).
+function rescaleFields(fields, oldW, oldH, newW, newH) {
+    if (!Array.isArray(fields) || !(oldW > 0) || !(oldH > 0) || !(newW > 0) || !(newH > 0)) return;
+    const sx = newW / oldW, sy = newH / oldH;
+    if (Math.abs(sx - 1) < 0.002 && Math.abs(sy - 1) < 0.002) return;
+    const s = Math.min(sx, sy);                 // uniformno za font/QR (čuva kvadrat/proporcije)
+    const r = v => Math.round(v * 10) / 10;
+    for (const f of fields) {
+        if (typeof f.left === 'number')     f.left     = r(f.left * sx);
+        if (typeof f.top === 'number')      f.top      = r(f.top * sy);
+        if (typeof f.width === 'number')    f.width    = r(f.width * sx);
+        if (typeof f.qrSize === 'number')   f.qrSize   = r(f.qrSize * s);
+        if (typeof f.fontSize === 'number') f.fontSize = Math.max(3, r(f.fontSize * s));
+    }
+}
+
+// Recovery: ako naslijeđeni raspored prelazi granice karte, uniformno ga smanji
+// da stane. Ne dira raspored koji već stane u kartu.
+function fitFieldsToCard(fields, cardW, cardH) {
+    if (!Array.isArray(fields) || !(cardW > 0) || !(cardH > 0)) return;
+    let maxR = 0, maxB = 0;
+    for (const f of fields) {
+        if (f.hidden) continue;
+        const ext = f.isQr ? (f.qrSize || 0) : (f.width || 0);
+        const hgt = f.isQr ? (f.qrSize || 0) : (f.fontSize || 0) * 0.3528;
+        maxR = Math.max(maxR, (f.left || 0) + ext);
+        maxB = Math.max(maxB, (f.top  || 0) + hgt);
+    }
+    if (maxR <= cardW && maxB <= cardH) return; // sve već stane
+    const fx = maxR > cardW ? cardW / maxR : 1;
+    const fy = maxB > cardH ? cardH / maxB : 1;
+    const factor = Math.min(fx, fy) * 0.97;     // mala rezerva da ne sjedi na samoj ivici
+    const r = v => Math.round(v * 10) / 10;
+    for (const f of fields) {
+        if (typeof f.left === 'number')     f.left     = r(f.left * factor);
+        if (typeof f.top === 'number')      f.top      = r(f.top * factor);
+        if (typeof f.width === 'number')    f.width    = r(f.width * factor);
+        if (typeof f.qrSize === 'number')   f.qrSize   = r(f.qrSize * factor);
+        if (typeof f.fontSize === 'number') f.fontSize = Math.max(3, r(f.fontSize * factor));
+    }
+}
+
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();if(!src.startsWith('data:'))i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('Slika se ne moze ucitati'));i.src=src;});}
 let _fontReady=null;
 function ensureFont(){
@@ -991,6 +1039,8 @@ function handleImg(file) {
         const w = pxToMm300(templateImgRef.naturalWidth || templateImgRef.width);
         const h = pxToMm300(templateImgRef.naturalHeight || templateImgRef.height);
         if (w >= 10 && h >= 10) {
+            // Skaliraj raspored sa stare na novu veličinu da polja ostanu na karti.
+            rescaleFields(tab1Fields, tab1CardSize.w, tab1CardSize.h, w, h);
             tab1CardSize = { w, h };
             document.getElementById('cardW').value = w;
             document.getElementById('cardH').value = h;
@@ -1019,6 +1069,7 @@ function autoSizeFromImage() {
     if (!templateImgRef) { alert('Prvo ucitaj sliku karte.'); return; }
     const asp = (templateImgRef.naturalWidth||templateImgRef.width) / (templateImgRef.naturalHeight||templateImgRef.height);
     const newH = Math.round(tab1CardSize.w / asp * 10) / 10;
+    rescaleFields(tab1Fields, tab1CardSize.w, tab1CardSize.h, tab1CardSize.w, newH);
     tab1CardSize = { w: tab1CardSize.w, h: newH };
     document.getElementById('cardW').value = tab1CardSize.w;
     document.getElementById('cardH').value = tab1CardSize.h;
@@ -1195,6 +1246,8 @@ function loadLocal() {
             const cw = document.getElementById('cardW'); if (cw) cw.value = data.cardSize.w;
             const ch = document.getElementById('cardH'); if (ch) ch.value = data.cardSize.h;
         }
+        // Naslijeđeni raspored (za veću karticu) vrati unutar granica trenutne karte.
+        fitFieldsToCard(tab1Fields, tab1CardSize.w, tab1CardSize.h);
         if (data.globalFont) {
             tab1GlobalFont = data.globalFont;
             const gf = document.getElementById('globalFont'); if (gf) gf.value = data.globalFont;
@@ -1566,6 +1619,8 @@ function handleFront(file) {
         const w = pxToMm300(frontImgRef.naturalWidth || frontImgRef.width);
         const h = pxToMm300(frontImgRef.naturalHeight || frontImgRef.height);
         if (w >= 10 && h >= 10) {
+            // Skaliraj raspored sa stare na novu veličinu da polja ostanu na karti.
+            rescaleFields(tab2Fields, tab2CardSize.w, tab2CardSize.h, w, h);
             tab2CardSize = { w, h };
             const cw = document.getElementById('dCardW'); if (cw) cw.value = w;
             const ch = document.getElementById('dCardH'); if (ch) ch.value = h;
@@ -1755,6 +1810,7 @@ function autoSizeFromImageD() {
     if (!frontImgRef) { alert('Prvo ucitaj prednju stranu.'); return; }
     const asp = (frontImgRef.naturalWidth||frontImgRef.width) / (frontImgRef.naturalHeight||frontImgRef.height);
     const newH = Math.round(tab2CardSize.w / asp * 10) / 10;
+    rescaleFields(tab2Fields, tab2CardSize.w, tab2CardSize.h, tab2CardSize.w, newH);
     tab2CardSize = { w: tab2CardSize.w, h: newH };
     document.getElementById('dCardW').value = tab2CardSize.w;
     document.getElementById('dCardH').value = tab2CardSize.h;
@@ -1941,6 +1997,8 @@ function loadLocalD() {
             const cw = document.getElementById('dCardW'); if (cw) cw.value = data.cardSize.w;
             const ch = document.getElementById('dCardH'); if (ch) ch.value = data.cardSize.h;
         }
+        // Naslijeđeni raspored (za veću karticu) vrati unutar granica trenutne karte.
+        fitFieldsToCard(tab2Fields, tab2CardSize.w, tab2CardSize.h);
         if (typeof data.bleed === 'number') {
             tab2BleedMm = data.bleed;
             const bl = document.getElementById('dBleed'); if (bl) bl.value = data.bleed;
