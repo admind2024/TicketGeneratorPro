@@ -174,13 +174,14 @@
                 <!-- Dimenzije karte -->
                 <div class="settings-card">
                     <div class="section-header">
-                        <div class="section-title"><span class="dot" style="background:#4a90d9"></span> Dimenzije karte (mm)</div>
+                        <div class="section-title"><span class="dot" style="background:#4a90d9"></span> Dimenzije karte (cm)</div>
                     </div>
                     <div class="opt-row">
                         <label for="cardW">Širina</label>
-                        <input type="number" id="cardW" value="205" min="10" max="1000" step="0.5" oninput="onCardSizeChange()">
+                        <input type="number" id="cardW" value="20.5" min="1" max="100" step="0.1" oninput="onCardSizeChange()">
                         <label for="cardH" style="margin-left:8px">Visina</label>
-                        <input type="number" id="cardH" value="82" min="10" max="1000" step="0.5" oninput="onCardSizeChange()">
+                        <input type="number" id="cardH" value="8.2" min="1" max="100" step="0.1" oninput="onCardSizeChange()">
+                        <span style="font-size:10px;color:#6b7280;margin-left:4px">cm</span>
                     </div>
                     <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="autoSizeFromImage()">Auto iz slike (aspect ratio)</button>
                 </div>
@@ -290,6 +291,22 @@
                     <div class="opt-row"><input type="checkbox" id="opCrop" checked><label for="opCrop">Oznake za rezanje</label></div>
                     <div class="opt-row"><label for="bleed">Prepust (mm)</label><input type="number" id="bleed" value="3" min="0" max="10" step="0.5"></div>
                     <div class="opt-row"><label for="perPage">Karata po stranici</label><input type="number" id="perPage" value="4" min="1" max="8"></div>
+                    <div class="opt-row" id="paperRow">
+                        <label for="paperPreset">Papir</label>
+                        <select id="paperPreset" onchange="onPaperPreset(this.value)" style="flex:1">
+                            <option value="21x29.7">A4 portret</option>
+                            <option value="29.7x21">A4 pejzaž</option>
+                            <option value="29.7x42">A3 portret</option>
+                            <option value="42x29.7">A3 pejzaž</option>
+                            <option value="custom">Custom…</option>
+                        </select>
+                    </div>
+                    <div class="opt-row" id="paperCustomRow" style="display:none">
+                        <input type="number" id="paperW" value="21" min="5" max="200" step="0.1" oninput="onPaperChange()" style="width:65px">
+                        <span style="font-size:11px;color:#6b7280">×</span>
+                        <input type="number" id="paperH" value="29.7" min="5" max="200" step="0.1" oninput="onPaperChange()" style="width:65px">
+                        <span style="font-size:10px;color:#6b7280">cm</span>
+                    </div>
                     <div class="opt-row"><input type="checkbox" id="optimizePdf" checked><label for="optimizePdf">Optimizuj PDF</label></div>
                     <div class="opt-row"><input type="checkbox" id="reorderCut"><label for="reorderCut">Preuredi za sijecenje</label></div>
                     <div class="opt-row"><label for="pagesPerDeck">Str. po spilu</label><input type="number" id="pagesPerDeck" value="100" min="1"></div>
@@ -804,6 +821,9 @@ function fieldDisplayText(f, parsed, seqId, seqPrint) {
 }
 // px → mm na 300 DPI (štamparski standard): mm = px × 25.4 / 300.
 function pxToMm300(px) { return Math.round(px / 300 * 25.4 * 10) / 10; }
+// Interno se sve računa u mm; UI dimenzije karte (Tab 1) prikazuju se u cm.
+function mmToCm(mm) { return Math.round(mm * 10) / 100; }   // 205 -> 20.5
+function cmToMm(cm) { return Math.round(cm * 100) / 10; }   // 20.5 -> 205
 
 // ── Polja unutar granica karte ──────────────────────────────────────────
 // Pozicije polja su u mm i NE skaliraju se same kad se promijeni veličina karte.
@@ -1051,8 +1071,8 @@ function handleImg(file) {
             // Skaliraj raspored sa stare na novu veličinu da polja ostanu na karti.
             rescaleFields(tab1Fields, tab1CardSize.w, tab1CardSize.h, w, h);
             tab1CardSize = { w, h };
-            document.getElementById('cardW').value = w;
-            document.getElementById('cardH').value = h;
+            document.getElementById('cardW').value = mmToCm(w);
+            document.getElementById('cardH').value = mmToCm(h);
             saveLocal();
         }
         checkReady();
@@ -1065,11 +1085,27 @@ function onOnePerPage(){
     const on=document.getElementById('onePerPage').checked;
     const pp=document.getElementById('perPage');
     pp.disabled=on; pp.style.opacity=on?0.4:1;
+    // Izbor papira vrijedi samo za "više karata po stranici" mod.
+    const pr=document.getElementById('paperRow'), pcr=document.getElementById('paperCustomRow');
+    if(pr){ pr.style.opacity=on?0.4:1; pr.querySelector('select').disabled=on; }
+    if(pcr){ pcr.style.opacity=on?0.4:1; pcr.querySelectorAll('input').forEach(i=>i.disabled=on); }
 }
+// Papir (Tab 1) — preset puni custom polja (u cm). "custom" otključava ručni unos.
+function onPaperPreset(val){
+    const cr=document.getElementById('paperCustomRow');
+    if(val==='custom'){ cr.style.display=''; saveLocal(); return; }
+    cr.style.display='none';
+    const [w,h]=val.split('x').map(Number);
+    document.getElementById('paperW').value=w;
+    document.getElementById('paperH').value=h;
+    saveLocal();
+}
+function onPaperChange(){ saveLocal(); }
 // ── Dimenzije karte ─────────────────────────────────────────────────────
 function onCardSizeChange() {
-    const w = Math.max(10, Number(document.getElementById('cardW').value) || DEFAULT_CARD_WIDTH_MM);
-    const h = Math.max(10, Number(document.getElementById('cardH').value) || DEFAULT_CARD_HEIGHT_MM);
+    // UI je u cm → interno mm (min 10mm = 1cm).
+    const w = Math.max(10, cmToMm(Number(document.getElementById('cardW').value)) || DEFAULT_CARD_WIDTH_MM);
+    const h = Math.max(10, cmToMm(Number(document.getElementById('cardH').value)) || DEFAULT_CARD_HEIGHT_MM);
     tab1CardSize = { w, h };
     saveLocal();
     schedPreview();
@@ -1080,8 +1116,8 @@ function autoSizeFromImage() {
     const newH = Math.round(tab1CardSize.w / asp * 10) / 10;
     rescaleFields(tab1Fields, tab1CardSize.w, tab1CardSize.h, tab1CardSize.w, newH);
     tab1CardSize = { w: tab1CardSize.w, h: newH };
-    document.getElementById('cardW').value = tab1CardSize.w;
-    document.getElementById('cardH').value = tab1CardSize.h;
+    document.getElementById('cardW').value = mmToCm(tab1CardSize.w);
+    document.getElementById('cardH').value = mmToCm(tab1CardSize.h);
     saveLocal();
     schedPreview();
 }
@@ -1221,6 +1257,8 @@ function S() {
         globalFont: tab1GlobalFont,
         qrFrame: document.getElementById('qrFrame').checked,
         perPage: parseInt(document.getElementById('perPage').value) || 4,
+        paperW: Math.max(50, cmToMm(Number(document.getElementById('paperW').value)) || 210),
+        paperH: Math.max(50, cmToMm(Number(document.getElementById('paperH').value)) || 297),
         onePerPage: document.getElementById('onePerPage').checked,
         crop: document.getElementById('opCrop').checked,
         bleed: Math.max(0, Number(document.getElementById('bleed').value) || 0),
@@ -1242,7 +1280,10 @@ function mergeFieldsWithDefaults(loadedFields) {
 }
 function saveLocal() {
     try {
-        const data = { fields: tab1Fields, cardSize: tab1CardSize, globalFont: tab1GlobalFont };
+        const data = { fields: tab1Fields, cardSize: tab1CardSize, globalFont: tab1GlobalFont,
+            paperPreset: document.getElementById('paperPreset')?.value,
+            paperW: Number(document.getElementById('paperW')?.value),
+            paperH: Number(document.getElementById('paperH')?.value) };
         localStorage.setItem(TAB1_STORAGE_KEY, JSON.stringify(data));
     } catch(e) { /* ignore */ }
 }
@@ -1254,14 +1295,25 @@ function loadLocal() {
         if (Array.isArray(data.fields)) tab1Fields = mergeFieldsWithDefaults(data.fields);
         if (data.cardSize && data.cardSize.w && data.cardSize.h) {
             tab1CardSize = data.cardSize;
-            const cw = document.getElementById('cardW'); if (cw) cw.value = data.cardSize.w;
-            const ch = document.getElementById('cardH'); if (ch) ch.value = data.cardSize.h;
+            const cw = document.getElementById('cardW'); if (cw) cw.value = mmToCm(data.cardSize.w);
+            const ch = document.getElementById('cardH'); if (ch) ch.value = mmToCm(data.cardSize.h);
         }
         // Naslijeđeni raspored (za veću karticu) vrati unutar granica trenutne karte.
         fitFieldsToCard(tab1Fields, tab1CardSize.w, tab1CardSize.h);
         if (data.globalFont) {
             tab1GlobalFont = data.globalFont;
             const gf = document.getElementById('globalFont'); if (gf) gf.value = data.globalFont;
+        }
+        // Papir (Tab 1)
+        if (data.paperW && data.paperH) {
+            const pw = document.getElementById('paperW'); if (pw) pw.value = data.paperW;
+            const ph = document.getElementById('paperH'); if (ph) ph.value = data.paperH;
+        }
+        if (data.paperPreset) {
+            const ps = document.getElementById('paperPreset'); if (ps) ps.value = data.paperPreset;
+            if (data.paperPreset === 'custom') {
+                const cr = document.getElementById('paperCustomRow'); if (cr) cr.style.display = '';
+            }
         }
     } catch(e) { /* ignore */ }
 }
@@ -1282,8 +1334,8 @@ document.getElementById('loadInput').onchange = async e => {
         if (Array.isArray(data.fields)) tab1Fields = mergeFieldsWithDefaults(data.fields);
         if (data.cardSize && data.cardSize.w && data.cardSize.h) {
             tab1CardSize = data.cardSize;
-            document.getElementById('cardW').value = data.cardSize.w;
-            document.getElementById('cardH').value = data.cardSize.h;
+            document.getElementById('cardW').value = mmToCm(data.cardSize.w);
+            document.getElementById('cardH').value = mmToCm(data.cardSize.h);
         }
         if (data.globalFont) {
             tab1GlobalFont = data.globalFont;
@@ -1472,9 +1524,11 @@ async function generate() {
     }
 
     const mg = 7, tpp = s.perPage;
-    const pw = 210, ph = 297, tw = pw - 2*mg, th = (ph - (tpp+1)*mg) / tpp;
+    const pw = s.paperW, ph = s.paperH;
+    const orient = pw >= ph ? 'landscape' : 'portrait';
+    const tw = pw - 2*mg, th = (ph - (tpp+1)*mg) / tpp;
     const pagesTotal = Math.ceil(total/tpp);
-    const batch = makeBatcher('tickets', () => new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true }));
+    const batch = makeBatcher('tickets', () => new jsPDF({ orientation: orient, unit: 'mm', format: [pw, ph], compress: true }));
     let done = 0;
     for (let p = 0; p < pagesTotal; p++) {
         const items = [];
@@ -1487,7 +1541,7 @@ async function generate() {
         if (!items.length) continue;
         const pageBytes = items.reduce((a, it) => a + it.data.length, 0);
         const { doc, fresh } = batch.page(pageBytes);
-        if (!fresh) doc.addPage();
+        if (!fresh) doc.addPage([pw, ph], orient);
         for (const it of items) {
             const yPos = mg + it.slot*(th + mg);
             const imgAsp = it.asp, slotAsp = tw/th;
@@ -1501,7 +1555,7 @@ async function generate() {
     }
     const files = batch.finish();
     hideProg();
-    offerPdf(files, 'PDF generisan! '+total+' karata, '+pagesTotal+' stranica'+(files.length>1?(' u '+files.length+' fajla'):'')+'.', 'statusBox');
+    offerPdf(files, 'PDF generisan! '+total+' karata, '+pagesTotal+' stranica'+(files.length>1?(' u '+files.length+' fajla'):'')+'. Papir '+mmToCm(pw)+'×'+mmToCm(ph)+' cm, '+tpp+' karata po stranici.', 'statusBox');
     } catch (err) {
         console.error('Generate error:', err);
         hideProg();
@@ -1516,6 +1570,7 @@ async function generate() {
 loadLocal();
 renderFieldList();
 updateDetailPanel();
+onOnePerPage();
 function showMsg(m,t){const e=document.getElementById('statusBox');e.className='status '+t;e.textContent=m;e.classList.remove('hidden');}
 function buildPdfBlob(doc){ try{ return doc.output('blob'); }catch(err){ console.error('PDF blob greska:',err); return null; } }
 function makeBatcher(baseName, newDocFn){
